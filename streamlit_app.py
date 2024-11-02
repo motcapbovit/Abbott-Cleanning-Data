@@ -35,7 +35,7 @@ st.logo(
     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Abbott_Laboratories_logo.svg/950px-Abbott_Laboratories_logo.svg.png",
     size="large",
 )
-st.sidebar.markdown("Made with ❤️ by [Sven](https://youtube.com/@codingisfun)")
+st.sidebar.markdown("Made with ❤️")
 
 
 # --- RUN NAVIGATION ---
