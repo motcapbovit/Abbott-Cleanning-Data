@@ -50,6 +50,16 @@ def get_timestamp_string():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+def determine_format_type(size): 
+    size_str = str(size).lower()
+    if 'ml' in size_str: 
+        return 'LIQ'
+    elif 'g' in size_str: 
+        return 'PWD' 
+    else: 
+        return "No format"
+
+
 ########################################################################################################
 
 ######################################## SECTION 1: Upload File ########################################
@@ -299,7 +309,9 @@ if upload_file is not None:
                 df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
             ) / df["Quantity"]
 
-        
+        FORMAT = st.checkbox("**ADD :red[FORMAT] COLUMN**")
+
+        df['Format'] = df['Size'].apply(determine_format_type)
 
     st.write("\n")
     with st.expander("**Dataframe Preview**"):
