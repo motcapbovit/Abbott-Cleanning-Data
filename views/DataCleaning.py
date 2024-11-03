@@ -362,16 +362,20 @@ if upload_file is not None:
             if start_date <= end_date:
                 period = (period_name, start_date, end_date)
                 existing_names = [p[0] for p in st.session_state.periods]
+                existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
 
-                if period_name in existing_names:
+                if period in st.session_state.periods:
+                    st.warning("This period already exists!")
+                    # st.session_state.periods.pop()
+                elif period_name in existing_names:
                     st.warning("This period name already exists!")
-                    st.stop()
-                if period not in st.session_state.periods:
+                    # st.session_state.periods.pop()
+                elif (start_date, end_date) in existing_dates:
+                    st.warning("This pair of start and end date already exists!")
+                elif period not in st.session_state.periods:
                     st.session_state.periods.append(period)
                     st.success("Period added successfully!")
-                else:
-                    st.warning("This period already exists!")
-                    st.stop()
+
             else:
                 st.error("End date must be after start date!")
                 st.stop()
