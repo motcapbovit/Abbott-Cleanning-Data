@@ -299,6 +299,8 @@ if upload_file is not None:
                 df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
             ) / df["Quantity"]
 
+        
+
     st.write("\n")
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
@@ -351,14 +353,18 @@ if upload_file is not None:
 
                 if period_name in existing_names:
                     st.warning("This period name already exists!")
+                    st.stop()
                 if period not in st.session_state.periods:
                     st.session_state.periods.append(period)
                     st.success("Period added successfully!")
                 else:
                     st.warning("This period already exists!")
+                    st.stop()
             else:
                 st.error("End date must be after start date!")
+                st.stop()
 
+    print(st.session_state.periods)
     # Display and manage periods
     if st.session_state.periods:
         st.write("##### **Current Periods**")
@@ -388,8 +394,8 @@ if upload_file is not None:
                     end_dt = pd.to_datetime(end_date) + pd.Timedelta(
                         hours=23, minutes=59, seconds=59
                     )
-                mask = (df["Created Time"] >= start_dt) & (df["Created Time"] <= end_dt)
-                df.loc[mask, "Period"] = name
+                    mask = (df["Created Time"] >= start_dt) & (df["Created Time"] <= end_dt)
+                    df.loc[mask, "Period"] = name
 
             except Exception as e:
                 st.error(f"Error processing data: {str(e)}")
