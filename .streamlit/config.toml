@@ -1,0 +1,16 @@
+[theme]
+# Primary accent color for interactive elements.
+primaryColor = "#009CDE"  # Màu xanh của logo Abbott
+
+# Background color for the main content area.
+backgroundColor = "#001F2A"  # Xanh đậm tối hơn cho sự nổi bật
+
+# Background color used for the sidebar and most interactive widgets.
+secondaryBackgroundColor = "#004B64"  # Xanh nhạt hơn làm nền phụ
+
+# Color used for almost all text.
+textColor = "#E0E6EA"  # Xám nhạt, dịu mắt hơn trên nền tối
+
+
+[client]
+toolbarMode = "minimal"
