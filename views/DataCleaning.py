@@ -417,59 +417,57 @@ if upload_file is not None:
                         "Date format error detected. Please ensure your dates are in DD/MM/YYYY HH:MM:SS format"
                     )
 
+            st.write("\n")
+            with st.expander("**Dataframe Preview**"):
+                st.dataframe(df)
+
         # Add clear all button
         with col26:
             if st.button("Clear All"):
                 st.session_state.periods = []
                 st.rerun()
 
-        st.write("\n")
-        with st.expander("**Dataframe Preview**"):
-            st.dataframe(df)
-
-        ##########################################################################################################
-
-        ########################################### SECTION 6: Download ##########################################
-
-        st.write("\n")
-        st.write("\n")
-        st.write("\n")
-        st.header(
-            "Download",
-            divider="gray",
-        )
-
-        # Dummy code for prettier layout
-        col15, col25, col35, col45, col55, col56 = st.columns(6)
-
-        with col35:
-            # CSV Download
-            csv_data = convert_df_to_csv(df)
-            timestamp = get_timestamp_string()
-            st.download_button(
-                label="📥 Download as CSV",
-                data=csv_data,
-                file_name=f"data_export_{timestamp}.csv",
-                mime="text/csv",
-                key="download-csv",
-            )
-
-        with col45:
-            # Excel Download
-            excel_data = convert_df_to_excel(df)
-            timestamp = get_timestamp_string()
-            st.download_button(
-                label="📥 Download as Excel",
-                data=excel_data,
-                file_name=f"data_export_{timestamp}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="download-excel",
-            )
-
-
     else:
         st.info("Add periods using the form above")
 
+    ##########################################################################################################
+
+    ########################################### SECTION 6: Download ##########################################
+
+    st.write("\n")
+    st.write("\n")
+    st.write("\n")
+    st.header(
+        "Download",
+        divider="gray",
+    )
+
+    # Dummy code for prettier layout
+    col15, col25, col35, col45, col55, col56 = st.columns(6)
+
+    with col35:
+        # CSV Download
+        csv_data = convert_df_to_csv(df)
+        timestamp = get_timestamp_string()
+        st.download_button(
+            label="📥 Download as CSV",
+            data=csv_data,
+            file_name=f"data_export_{timestamp}.csv",
+            mime="text/csv",
+            key="download-csv",
+        )
+
+    with col45:
+        # Excel Download
+        excel_data = convert_df_to_excel(df)
+        timestamp = get_timestamp_string()
+        st.download_button(
+            label="📥 Download as Excel",
+            data=excel_data,
+            file_name=f"data_export_{timestamp}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="download-excel",
+        )
 
 else:
     st.info("Upload your data file to continue.")
