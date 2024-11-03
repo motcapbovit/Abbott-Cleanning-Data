@@ -384,7 +384,7 @@ if upload_file is not None:
         for i, (name, start, end) in enumerate(st.session_state.periods):
             with col16:
                 st.write(
-                    f"Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
+                    f"- Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
                 )
             with col26:
                 if st.button(f"Remove", key=f"remove_{i}"):
