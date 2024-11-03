@@ -305,47 +305,15 @@ if upload_file is not None:
 
     ##########################################################################################################
 
-    ########################################### SECTION 5: Download ##########################################
+    ########################################### SECTION 5: Divide Periods ##########################################
 
     st.write("\n")
     st.write("\n")
     st.write("\n")
     st.header(
-        "Download",
+        "Divide Periods",
         divider="gray",
     )
-
-    st.subheader("**Complete Dataset**")
-
-    # Dummy code for prettier layout
-    col15, col25, col35, col45, col55, col56 = st.columns(6)
-
-    with col35:
-        # CSV Download
-        csv_data = convert_df_to_csv(df)
-        timestamp = get_timestamp_string()
-        st.download_button(
-            label="📥 Download as CSV",
-            data=csv_data,
-            file_name=f"data_export_{timestamp}.csv",
-            mime="text/csv",
-            key="download-csv",
-        )
-
-    with col45:
-        # Excel Download
-        excel_data = convert_df_to_excel(df)
-        timestamp = get_timestamp_string()
-        st.download_button(
-            label="📥 Download as Excel",
-            data=excel_data,
-            file_name=f"data_export_{timestamp}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download-excel",
-        )
-
-    st.divider()
-    st.subheader("**Period Datasets**")
 
     df["Created Time"] = pd.to_datetime(df["Created Time"], format="%d/%m/%Y %H:%M:%S")
 
@@ -358,20 +326,31 @@ if upload_file is not None:
 
     # Add period form
     with st.form("add_period_form"):
-        col15, col25 = st.columns(2)
+        col15, col25, col35 = st.columns(3)
         with col15:
+            period_name = st.text_input("Period Name")
+        with col25:
             start_date = st.date_input(
                 "Start Date", value=min_date, min_value=min_date, max_value=max_date
             )
-        with col25:
+        with col35:
             end_date = st.date_input(
                 "End Date", value=max_date, min_value=min_date, max_value=max_date
             )
 
         submitted = st.form_submit_button("Add Period")
+
+        if submitted and not period_name:
+            st.error("Please enter period name!")
+            st.stop()
+
         if submitted and start_date and end_date:
             if start_date <= end_date:
-                period = (start_date, end_date)
+                period = (period_name, start_date, end_date)
+                existing_names = [p[0] for p in st.session_state.periods]
+
+                if period_name in existing_names:
+                    st.warning("This period name already exists!")
                 if period not in st.session_state.periods:
                     st.session_state.periods.append(period)
                     st.success("Period added successfully!")
@@ -384,10 +363,10 @@ if upload_file is not None:
     if st.session_state.periods:
         st.write("##### **Current Periods**")
         col16, col26 = st.columns([3, 1])
-        for i, (start, end) in enumerate(st.session_state.periods):
+        for i, (name, start, end) in enumerate(st.session_state.periods):
             with col16:
                 st.write(
-                    f"Period {i+1}: {start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}"
+                    f"Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
                 )
             with col26:
                 if st.button(f"Remove", key=f"remove_{i}"):
@@ -402,70 +381,15 @@ if upload_file is not None:
                     df["Created Time"], format="%d/%m/%Y %H:%M:%S"
                 )
 
-                # Create tabs for CSV and Excel downloads
-                tab1, tab2 = st.tabs(["CSV Downloads", "Excel Downloads"])
+                df["Period"] = "No Period"
 
-                with tab1:
-                    st.write("### Download CSV Files")
-                    for i, (start_date, end_date) in enumerate(
-                        st.session_state.periods, start=1
-                    ):
-                        # Convert dates to datetime with time
-                        start_dt = pd.to_datetime(start_date)
-                        end_dt = pd.to_datetime(end_date) + pd.Timedelta(
-                            hours=23, minutes=59, seconds=59
-                        )
-
-                        # Filter DataFrame
-                        period_df = df[
-                            (df["Created Time"] >= start_dt)
-                            & (df["Created Time"] <= end_dt)
-                        ].sort_values(by="Created Time")
-
-                        # Create download button
-                        if not period_df.empty:
-                            csv_data = convert_df_to_csv(period_df)
-                            file_name = f"Data_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.csv"
-                            st.download_button(
-                                label=f"📥 Download Period {i} ({len(period_df)} rows)",
-                                data=csv_data,
-                                file_name=file_name,
-                                mime="text/csv",
-                                key=f"csv_{i}",
-                            )
-                        else:
-                            st.warning(f"No data found for period {i}")
-
-                with tab2:
-                    st.write("### Download Excel Files")
-                    for i, (start_date, end_date) in enumerate(
-                        st.session_state.periods, start=1
-                    ):
-                        # Convert dates to datetime with time
-                        start_dt = pd.to_datetime(start_date)
-                        end_dt = pd.to_datetime(end_date) + pd.Timedelta(
-                            hours=23, minutes=59, seconds=59
-                        )
-
-                        # Filter DataFrame
-                        period_df = df[
-                            (df["Created Time"] >= start_dt)
-                            & (df["Created Time"] <= end_dt)
-                        ].sort_values(by="Created Time")
-
-                        # Create download button
-                        if not period_df.empty:
-                            excel_data = convert_df_to_excel(period_df)
-                            file_name = f"Data_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
-                            st.download_button(
-                                label=f"📥 Download Period {i} ({len(period_df)} rows)",
-                                data=excel_data,
-                                file_name=file_name,
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                key=f"excel_{i}",
-                            )
-                        else:
-                            st.warning(f"No data found for period {i}")
+                for name, start_date, end_date in st.session_state.periods:
+                    start_dt = pd.to_datetime(start_date)
+                    end_dt = pd.to_datetime(end_date) + pd.Timedelta(
+                        hours=23, minutes=59, seconds=59
+                    )
+                mask = (df["Created Time"] >= start_dt) & (df["Created Time"] <= end_dt)
+                df.loc[mask, "Period"] = name
 
             except Exception as e:
                 st.error(f"Error processing data: {str(e)}")
@@ -481,9 +405,120 @@ if upload_file is not None:
                 st.session_state.periods = []
                 st.rerun()
 
+        st.write("\n")
+        with st.expander("**Dataframe Preview**"):
+            st.dataframe(df)
+
+        ##########################################################################################################
+
+        ########################################### SECTION 6: Download ##########################################
+
+        st.write("\n")
+        st.write("\n")
+        st.write("\n")
+        st.header(
+            "Download",
+            divider="gray",
+        )
+
+        # Dummy code for prettier layout
+        col15, col25, col35, col45, col55, col56 = st.columns(6)
+
+        with col35:
+            # CSV Download
+            csv_data = convert_df_to_csv(df)
+            timestamp = get_timestamp_string()
+            st.download_button(
+                label="📥 Download as CSV",
+                data=csv_data,
+                file_name=f"data_export_{timestamp}.csv",
+                mime="text/csv",
+                key="download-csv",
+            )
+
+        with col45:
+            # Excel Download
+            excel_data = convert_df_to_excel(df)
+            timestamp = get_timestamp_string()
+            st.download_button(
+                label="📥 Download as Excel",
+                data=excel_data,
+                file_name=f"data_export_{timestamp}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="download-excel",
+            )
+
+
     else:
         st.info("Add periods using the form above")
 
 
 else:
     st.info("Upload your data file to continue.")
+
+
+
+# # Create tabs for CSV and Excel downloads
+# tab1, tab2 = st.tabs(["CSV Downloads", "Excel Downloads"])
+
+# with tab1:
+#     st.write("### Download CSV Files")
+#     for i, (start_date, end_date) in enumerate(
+#         st.session_state.periods, start=1
+#     ):
+#         # Convert dates to datetime with time
+#         start_dt = pd.to_datetime(start_date)
+#         end_dt = pd.to_datetime(end_date) + pd.Timedelta(
+#             hours=23, minutes=59, seconds=59
+#         )
+
+#         # Filter DataFrame
+#         period_df = df[
+#             (df["Created Time"] >= start_dt)
+#             & (df["Created Time"] <= end_dt)
+#         ].sort_values(by="Created Time")
+
+#         # Create download button
+#         if not period_df.empty:
+#             csv_data = convert_df_to_csv(period_df)
+#             file_name = f"Data_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.csv"
+#             st.download_button(
+#                 label=f"📥 Download Period {i} ({len(period_df)} rows)",
+#                 data=csv_data,
+#                 file_name=file_name,
+#                 mime="text/csv",
+#                 key=f"csv_{i}",
+#             )
+#         else:
+#             st.warning(f"No data found for period {i}")
+
+# with tab2:
+#     st.write("### Download Excel Files")
+#     for i, (start_date, end_date) in enumerate(
+#         st.session_state.periods, start=1
+#     ):
+#         # Convert dates to datetime with time
+#         start_dt = pd.to_datetime(start_date)
+#         end_dt = pd.to_datetime(end_date) + pd.Timedelta(
+#             hours=23, minutes=59, seconds=59
+#         )
+
+#         # Filter DataFrame
+#         period_df = df[
+#             (df["Created Time"] >= start_dt)
+#             & (df["Created Time"] <= end_dt)
+#         ].sort_values(by="Created Time")
+
+#         # Create download button
+#         if not period_df.empty:
+#             excel_data = convert_df_to_excel(period_df)
+#             file_name = f"Data_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
+#             st.download_button(
+#                 label=f"📥 Download Period {i} ({len(period_df)} rows)",
+#                 data=excel_data,
+#                 file_name=file_name,
+#                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+#                 key=f"excel_{i}",
+#             )
+#         else:
+#             st.warning(f"No data found for period {i}")
