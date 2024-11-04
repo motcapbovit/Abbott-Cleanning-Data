@@ -71,30 +71,37 @@ st.header(
 
 upload_file = st.file_uploader("Choose your data file (CSV format)", type="csv")
 
-########################################################################################################
+if upload_file is None:
+    st.info("Upload your data file to continue.")
 
-####################################### SECTION 2: Cast Columns ########################################
+elif upload_file is not None and not upload_file.name.endswith(".csv"):
+    # Unsupported file format
+    st.error("Unsupported file format. Please upload a CSV file.")
+    st.stop()  # Stops Streamlit from processing further elements
 
-st.write("\n")
-st.write("\n")
-st.write("\n")
-st.header(
-    "Cast Columns",
-    divider="gray",
-)
-
-if upload_file is not None:
-    # Check the file format
-    if not upload_file.name.endswith(".csv"):
-        # Unsupported file format
-        st.error("Unsupported file format. Please upload a CSV file.")
-        st.stop()  # Stops Streamlit from processing further elements
-
-    # Read headers
+else:
+    # Process file through buffer for multiple read
     file_buffer = upload_file.read()
 
-    df_headers = pd.read_csv(io.BytesIO(file_buffer), nrows=0, low_memory=False)
-    headers_list = df_headers.columns.tolist()
+    # Read the original data
+    df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
+    headers_list = df_original.columns.tolist()
+
+    st.write("\n")
+    with st.expander("**Dataframe Preview**"):
+        st.dataframe(df_original)    
+
+    ########################################################################################################
+
+    ####################################### SECTION 2: Cast Columns ########################################
+
+    st.write("\n")
+    st.write("\n")
+    st.write("\n")
+    st.header(
+        "Cast Columns",
+        divider="gray",
+    )
 
     # Divide the layout
     col11, col21 = st.columns(2)
@@ -126,7 +133,7 @@ if upload_file is not None:
 
         # Specified default columns
         default_numeric_columns = list(
-            df_headers.loc[:, "SKU Unit Original Price":"Order Refund Amount"].columns
+            df_original.loc[:, "SKU Unit Original Price":"Order Refund Amount"].columns
         )
 
         # Identify columns that need to be casted as numeric format
@@ -301,7 +308,7 @@ if upload_file is not None:
     with col13:
         st.subheader("**Calculated Columns**")
 
-        FSP = st.checkbox("**ADD :red[FSP] COLUMN**")
+        FSP = st.checkbox("**ADD :red[FSP] COLUMN**", value=True)
 
         if FSP:
             # Calculate FSP
@@ -309,7 +316,7 @@ if upload_file is not None:
                 df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
             ) / df["Quantity"]
 
-        FORMAT = st.checkbox("**ADD :red[FORMAT] COLUMN**")
+        FORMAT = st.checkbox("**ADD :red[FORMAT] COLUMN**", value=True)
 
         df['Format'] = df['Size'].apply(determine_format_type)
 
@@ -473,8 +480,7 @@ if upload_file is not None:
             key="download-excel",
         )
 
-else:
-    st.info("Upload your data file to continue.")
+
 
 
 
