@@ -251,7 +251,7 @@ else:
         # Specified default brands
         outliers_size = [
             "COMBO 4 LỐC (24 CHAI) SỮA NƯỚC GLUCERNA HƯƠNG VANI",
-            "COMBO 5 LỐC (30 CH" "AI) SỮA NƯỚC GLUCERNA HƯƠNG VANI",
+            "COMBO 5 LỐC (30 CHAI) SỮA NƯỚC GLUCERNA HƯƠNG VANI",
             "1 THÙNG 24 CHAI SỮA NƯỚC GLUCERNA HƯƠNG VANI",
             "[TẶNG BÌNH GIỮ NHIỆT] COMBO 24 CHAI SỮA NƯỚC GLUCERNA HƯƠNG VANI",
         ]
