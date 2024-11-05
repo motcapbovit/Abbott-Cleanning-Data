@@ -50,14 +50,40 @@ def get_timestamp_string():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def determine_format_type(size): 
+def determine_format_type(size):
     size_str = str(size).lower()
-    if 'ml' in size_str: 
-        return 'LIQ'
-    elif 'g' in size_str: 
-        return 'PWD' 
-    else: 
+    if "ml" in size_str:
+        return "LIQ"
+    elif "g" in size_str:
+        return "PWD"
+    else:
         return "No format"
+
+
+def extract_deal_info(product_name, exclude_outliers, kol_outliers):
+    # Find all square brackets in product names
+    brackets = re.findall(r"\[(.*?)\]", product_name)
+
+    # Remove words that contain any word in exclude_outliers
+    brackets = [
+        b
+        for b in brackets
+        if all(excl.lower() not in b.lower() for excl in exclude_outliers)
+    ]
+
+    # Check whether any words in square bracket contain "DEAL"
+    deal_phrases = [phrase for phrase in brackets if "DEAL" in phrase.upper()]
+
+    if deal_phrases:
+        # Get the words positioned after the "DEAL" word in the square bracket
+        deal_info = deal_phrases[0].split("DEAL")[1].strip().upper()
+        return deal_info
+    else:
+        # Check whether there are any KOLs in the product names
+        special_phrases = [
+            kol.upper() for kol in kol_outliers if kol.upper() in product_name.upper()
+        ]
+        return special_phrases[0] if special_phrases else "No KOLs"
 
 
 ########################################################################################################
@@ -89,7 +115,7 @@ else:
 
     st.write("\n")
     with st.expander("**Dataframe Preview**"):
-        st.dataframe(df_original)    
+        st.dataframe(df_original)
 
     ########################################################################################################
 
@@ -285,8 +311,6 @@ else:
             + "\n".join(f"- {option}" for option in outliers_size_list)
         )
 
-        # INPUT ALLOW
-
         df.loc[
             df["Product Name"].isin(outliers_size) & df["Size"].isna(),
             "Size",
@@ -300,7 +324,7 @@ else:
 
     ##########################################################################################################
 
-    ########################################### SECTION 5: Add FSP ###########################################
+    ###################################### SECTION 5: Add FSP & FORMAT #######################################
 
     # Divide the layout
     col13, col23 = st.columns(2)
@@ -318,7 +342,7 @@ else:
 
         FORMAT = st.checkbox("**ADD :red[FORMAT] COLUMN**", value=True)
 
-        df['Format'] = df['Size'].apply(determine_format_type)
+        df["Format"] = df["Size"].apply(determine_format_type)
 
     st.write("\n")
     with st.expander("**Dataframe Preview**"):
@@ -326,7 +350,83 @@ else:
 
     ##########################################################################################################
 
-    ########################################### SECTION 5: Divide Periods ##########################################
+    ##################################### SECTION 6: Add KOL Extraction ######################################
+
+    st.subheader("**KOL Extraction**")
+
+    col14, col24 = st.columns(2)
+
+    with col14:
+        exclude_outliers = ["Hot Deal", "Deal Hè"]
+
+        exclude_outliers_list = st.multiselect(
+            label="**EXCLUDE OUTLIERS**",
+            options=exclude_outliers,
+            default=exclude_outliers,
+        )
+
+        # Add a text input for specifying new options
+        exclude_outliers_new_option = st.text_input(
+            "OR SPECIFY NEW OPTIONS FOR EXCLUDE OUTLIERS (SEPARATE BY COMMAS):"
+        )
+
+        # Split and append each new option if provided
+        if exclude_outliers_new_option:
+            # Split new_option by commas and strip any extra whitespace around each part
+            new_options_list = [
+                option.strip()
+                for option in exclude_outliers_new_option.split(",")
+                if option.strip()
+            ]
+            # Append each new option to the selected_options list
+            exclude_outliers_list.extend(new_options_list)
+
+        st.write("\n")
+        st.write(
+            "##### **Selected exclude outliers:**\n"
+            + "\n".join(f"- {option}" for option in exclude_outliers_list)
+        )
+
+    with col24:
+        kol_outliers = ["Quyền Leo", "Hằng Du Mục"]
+
+        kol_outliers_list = st.multiselect(
+            label="**KOL OUTLIERS**", options=kol_outliers, default=kol_outliers
+        )
+
+        # Add a text input for specifying new options
+        kol_outliers_new_option = st.text_input(
+            "OR SPECIFY NEW OPTIONS FOR KOL OUTLIERS (SEPARATE BY COMMAS):"
+        )
+
+        # Split and append each new option if provided
+        if kol_outliers_new_option:
+            # Split new_option by commas and strip any extra whitespace around each part
+            new_options_list = [
+                option.strip()
+                for option in kol_outliers_new_option.split(",")
+                if option.strip()
+            ]
+            # Append each new option to the selected_options list
+            kol_outliers_list.extend(new_options_list)
+
+        st.write("\n")
+        st.write(
+            "##### **Selected KOL outliers:**\n"
+            + "\n".join(f"- {option}" for option in kol_outliers_list)
+        )
+
+    df["KOL"] = df["Product Name"].apply(
+        lambda x: extract_deal_info(x, exclude_outliers, kol_outliers)
+    )
+
+    st.write("\n")
+    with st.expander("**Dataframe Preview**"):
+        st.dataframe(df)
+
+    ##########################################################################################################
+
+    ######################################## SECTION 5: Divide Periods #######################################
 
     st.write("\n")
     st.write("\n")
@@ -417,7 +517,9 @@ else:
                     end_dt = pd.to_datetime(end_date) + pd.Timedelta(
                         hours=23, minutes=59, seconds=59
                     )
-                    mask = (df["Created Time"] >= start_dt) & (df["Created Time"] <= end_dt)
+                    mask = (df["Created Time"] >= start_dt) & (
+                        df["Created Time"] <= end_dt
+                    )
                     df.loc[mask, "Period"] = name
 
             except Exception as e:
@@ -479,9 +581,6 @@ else:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             key="download-excel",
         )
-
-
-
 
 
 # # Create tabs for CSV and Excel downloads
