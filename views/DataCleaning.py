@@ -314,11 +314,11 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    st.divider()
-
     ##########################################################################################################
 
     ###################################### SECTION 5: Add FSP & FORMAT #######################################
+
+    st.divider()
 
     # Divide the layout
     col13, col23 = st.columns(2)
@@ -346,12 +346,14 @@ else:
 
     ##################################### SECTION 6: Add KOL Extraction ######################################
 
+    st.divider()
+
     st.subheader("**KOL Extraction**")
 
     col14, col24 = st.columns(2)
 
     with col14:
-        exclude_outliers = ["Hot Deal", "Deal Hè"]
+        exclude_outliers = ["Hot Deal", "Deal Hè", "Deal E2E"]
 
         exclude_outliers_list = st.multiselect(
             label="**EXCLUDE OUTLIERS**",
@@ -420,7 +422,8 @@ else:
 
     ##########################################################################################################
 
-    ######################################## SECTION 5: Divide Periods #######################################
+    ######################################## SECTION 7: Divide Periods #######################################
+
 
     st.write("\n")
     st.write("\n")
@@ -481,7 +484,6 @@ else:
                 st.error("End date must be after start date!")
                 st.stop()
 
-    print(st.session_state.periods)
     # Display and manage periods
     if st.session_state.periods:
         st.write("##### **Current Periods**")
@@ -539,7 +541,7 @@ else:
 
     ##########################################################################################################
 
-    ########################################### SECTION 6: Download ##########################################
+    ########################################### SECTION 8: Download ##########################################
 
     st.write("\n")
     st.write("\n")
