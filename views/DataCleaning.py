@@ -51,13 +51,7 @@ def get_timestamp_string():
 
 
 def determine_format_type(size):
-    size_str = str(size).lower()
-    if "ml" in size_str:
-        return "LIQ"
-    elif "g" in size_str:
-        return "PWD"
-    else:
-        return "No format"
+    return "LIQ" if "ml" in str(size).lower() else "PWD" if "g" in str(size).lower() else "No format"
 
 
 def extract_deal_info(product_name, exclude_outliers, kol_outliers):
