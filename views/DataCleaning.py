@@ -52,11 +52,15 @@ def get_timestamp_string():
 
 
 def determine_format_type(size):
+<<<<<<< HEAD
     return (
         "LIQ"
         if "ml" in str(size).lower()
         else "PWD" if "g" in str(size).lower() else "No format"
     )
+=======
+    return "LIQ" if "ml" in str(size).lower() else "PWD" if "g" in str(size).lower() else "No format"
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
 
 
 def extract_deal_info(product_name, exclude_outliers, kol_outliers):
@@ -88,11 +92,16 @@ def extract_deal_info(product_name, exclude_outliers, kol_outliers):
 def get_default_periods(min_date, max_date):
     periods = []
     current_date = min_date.replace(day=1)  # Start from first day of min_date's month
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
     while current_date <= max_date:
         # Get the last day of current month
         _, last_day = monthrange(current_date.year, current_date.month)
         month_end = current_date.replace(day=last_day)
+<<<<<<< HEAD
 
         # If we're in the last month and max_date is before month end
         if month_end > max_date:
@@ -114,12 +123,51 @@ def get_default_periods(min_date, max_date):
         if pay_day_start <= month_end and pay_day_start <= max_date:
             periods.append((f"Pay Day", pay_day_start, month_end))
 
+=======
+        
+        # If we're in the last month and max_date is before month end
+        if month_end > max_date:
+            month_end = max_date
+            
+        # Calculate period end dates
+        double_day_end = min(current_date.replace(day=13), month_end)
+        mid_month_end = min(current_date.replace(day=20), month_end)
+        
+        # Only add periods if they fall within our date range
+        if current_date <= double_day_end:
+            periods.append((
+                f"Double Day", 
+                current_date, 
+                double_day_end
+            ))
+            
+        mid_month_start = double_day_end.replace(day=14)
+        if mid_month_start <= month_end and mid_month_start <= max_date:
+            periods.append((
+                f"Mid Month", 
+                mid_month_start, 
+                mid_month_end
+            ))
+            
+        pay_day_start = mid_month_end.replace(day=21)
+        if pay_day_start <= month_end and pay_day_start <= max_date:
+            periods.append((
+                f"Pay Day", 
+                pay_day_start, 
+                month_end
+            ))
+        
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
         # Move to next month
         if current_date.month == 12:
             current_date = current_date.replace(year=current_date.year + 1, month=1)
         else:
             current_date = current_date.replace(month=current_date.month + 1)
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
     return periods
 
 
@@ -466,6 +514,10 @@ else:
     ##########################################################################################################
 
     ######################################## SECTION 7: Divide Periods #######################################
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
 
     st.write("\n")
     st.write("\n")
@@ -502,14 +554,22 @@ else:
 
         submitted = st.form_submit_button("Add Period")
         st.markdown("**OR**")
+<<<<<<< HEAD
         add_defaults = st.form_submit_button("Add Default Periods")
+=======
+        add_defaults = st.form_submit_button("Add Default Periods")            
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
 
         if submitted and not period_name:
             st.error("Please enter period name!")
             print(st.session_state.periods)
         elif submitted and start_date and end_date:
             form_submitted = True
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
     if form_submitted:
         if start_date <= end_date:
             period = (period_name, start_date, end_date)
@@ -521,7 +581,11 @@ else:
                 # st.session_state.periods.pop()
             # elif period_name in existing_names:
             #     st.warning("This period name already exists!")
+<<<<<<< HEAD
             # st.session_state.periods.pop()
+=======
+                # st.session_state.periods.pop()
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
             elif (start_date, end_date) in existing_dates:
                 st.warning("This pair of start and end date already exists!")
             elif period not in st.session_state.periods:
@@ -535,13 +599,18 @@ else:
     if add_defaults:
         default_periods = get_default_periods(min_date, max_date)
         new_periods_added = 0
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
         for period in default_periods:
             if period not in st.session_state.periods:
                 # existing_names = [p[0] for p in st.session_state.periods]
                 existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
-
+                
                 if period in st.session_state.periods:
+<<<<<<< HEAD
                     st.warning(
                         f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
                     )
@@ -571,14 +640,46 @@ else:
             # Xác định period này thuộc cột nào
             current_col = col16 if i < periods_per_col else col26
 
+=======
+                    st.warning(f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!")
+                elif (period[1], period[2]) in existing_dates:
+                    st.warning(f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!")
+                elif period not in st.session_state.periods:
+                    st.session_state.periods.append(period)
+                    new_periods_added += 1
+        
+        if new_periods_added > 0:
+            st.success(f"Added {new_periods_added} default periods successfully!")
+
+    # # Display and manage periods    
+    if st.session_state.periods:
+        st.write("##### Current Periods")
+        
+        # Tạo 2 cột chính
+        col16, col26 = st.columns(2)
+        
+        # Tính số period cho mỗi cột
+        total_periods = len(st.session_state.periods)
+        periods_per_col = (total_periods + 1) // 2  # Làm tròn lên
+        
+        for i, (name, start, end) in enumerate(st.session_state.periods):
+            # Xác định period này thuộc cột nào
+            current_col = col16 if i < periods_per_col else col26
+            
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
             # Tạo container cho period
             with current_col:
                 period_container = st.container()
                 with period_container:
+<<<<<<< HEAD
                     col161, col261 = st.columns(
                         [3, 1]
                     )  # Chia container thành 2 phần cho nội dung và nút remove
 
+=======
+                    col161, col261 = st.columns([3, 1])  # Chia container thành 2 phần cho nội dung và nút remove
+                    
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
                     with col161:
                         st.write(
                             f"- Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
@@ -621,7 +722,11 @@ else:
                 st.dataframe(df)
 
         # Add clear all button
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 6d87bef404c62f4c9aaf27f00bbd5320c4f41051
         if st.button("Clear All"):
             st.session_state.periods = []
             st.rerun()
