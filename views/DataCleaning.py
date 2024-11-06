@@ -417,7 +417,7 @@ else:
         )
 
     df["KOL"] = df["Product Name"].apply(
-        lambda x: extract_deal_info(x, exclude_outliers, kol_outliers)
+        lambda x: extract_deal_info(x, exclude_outliers_list, kol_outliers_list)
     )
 
     st.write("\n")
