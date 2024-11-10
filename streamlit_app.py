@@ -55,18 +55,8 @@ timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
 with st.sidebar:
     st.markdown("Made with ❤️ by Con Bo Thui")
     st.write("---")  # Add a separator line
-    st.markdown(
-        f"""
-        <div style='position: fixed; bottom: 0; left: 0; padding: 10px; width: 100%; background-color: transparent;'>
-            <p style='margin: 0; color: #666; font-size: 0.8em; text-align: center;'>
-                Version: {VERSION}<br>
-                Last Updated: {timestamp} (GMT+7)
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
+    st.write(f"Version: {VERSION}")
+    st.write(f"Last Updated: {timestamp} (GMT+7)")
 
 # --- RUN NAVIGATION ---
 pg.run()
