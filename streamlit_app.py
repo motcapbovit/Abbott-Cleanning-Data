@@ -60,6 +60,7 @@ with st.sidebar:
     st.write("---")  # Add a separator line
     st.write(f"Version: {VERSION}")
     st.write(f"Last Updated: {timestamp} (GMT+7)")
+    st.write("HAHA")
 
 
 # --- RUN NAVIGATION ---
