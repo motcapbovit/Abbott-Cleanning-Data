@@ -1,22 +1,24 @@
 import os
 from datetime import datetime
+from datetime import timezone
 
 
 def update_version():
-    current_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    # Sử dụng datetime.now(timezone.utc) thay vì utcnow()
+    current_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
-    # Read current version
+    # Đọc nội dung hiện tại của file version.py
     with open("version.py", "r") as file:
         lines = file.readlines()
 
-    # Update version lines
+    # Tìm và cập nhật dòng chứa LAST_UPDATED
     for i, line in enumerate(lines):
         if line.startswith("LAST_UPDATED"):
             lines[i] = (
                 f'LAST_UPDATED = "{current_time}"  # This will be updated manually when you push code\n'
             )
 
-    # Write back to file
+    # Ghi lại nội dung mới vào file version.py
     with open("version.py", "w") as file:
         file.writelines(lines)
 
