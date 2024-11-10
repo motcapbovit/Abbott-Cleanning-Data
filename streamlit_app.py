@@ -44,12 +44,15 @@ st.logo(
 # Convert the timestamp string to datetime object
 last_updated = datetime.strptime(LAST_UPDATED, "%Y-%m-%d %H:%M:%S")
 
+
 # Convert to Vietnam timezone
 vietnam_tz = pytz.timezone("Asia/Ho_Chi_Minh")
 last_updated = pytz.utc.localize(last_updated).astimezone(vietnam_tz)
 
+
 # Format the timestamp
 timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
+
 
 # Add to sidebar
 with st.sidebar:
@@ -57,6 +60,7 @@ with st.sidebar:
     st.write("---")  # Add a separator line
     st.write(f"Version: {VERSION}")
     st.write(f"Last Updated: {timestamp} (GMT+7)")
+
 
 # --- RUN NAVIGATION ---
 pg.run()
