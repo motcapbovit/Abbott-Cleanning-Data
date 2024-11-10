@@ -1,4 +1,7 @@
 import streamlit as st
+from version import VERSION, LAST_UPDATED
+from datetime import datetime
+import pytz
 
 st.set_page_config(layout="wide")
 
@@ -21,7 +24,7 @@ dashboard_page = st.Page(
 )
 
 
-# --- NAVIGATION SETUP [WITH SECTIONS]---
+# --- NAVIGATION SETUP ---
 pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
@@ -30,12 +33,39 @@ pg = st.navigation(
 )
 
 
-# --- SHARED ON ALL PAGES ---
+# --- LOGO SETUP ---
 st.logo(
     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Abbott_Laboratories_logo.svg/950px-Abbott_Laboratories_logo.svg.png",
     size="large",
 )
-st.sidebar.markdown("Made with ❤️ by Con Bo Thui")
+
+
+# --- SIDEBAR SETUP ---
+# Convert the timestamp string to datetime object
+last_updated = datetime.strptime(LAST_UPDATED, "%Y-%m-%d %H:%M:%S")
+
+# Convert to Vietnam timezone
+vietnam_tz = pytz.timezone("Asia/Ho_Chi_Minh")
+last_updated = pytz.utc.localize(last_updated).astimezone(vietnam_tz)
+
+# Format the timestamp
+timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
+
+# Add to sidebar
+with st.sidebar:
+    st.markdown("Made with ❤️ by Con Bo Thui")
+    st.write("---")  # Add a separator line
+    st.markdown(
+        f"""
+        <div style='position: fixed; bottom: 0; left: 0; padding: 10px; width: 100%; background-color: transparent;'>
+            <p style='margin: 0; color: #666; font-size: 0.8em; text-align: center;'>
+                Version: {VERSION}<br>
+                Last Updated: {timestamp} (GMT+7)
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- RUN NAVIGATION ---
