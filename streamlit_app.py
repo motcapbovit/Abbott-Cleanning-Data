@@ -57,10 +57,9 @@ timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
 # Add to sidebar
 with st.sidebar:
     st.markdown("Made with ❤️ by Con Bo Thui")
-    st.write("---")  # Add a separator line
+    st.divider()  # Add a separator line
     st.write(f"Version: {VERSION}")
     st.write(f"Last Updated: {timestamp} (GMT+7)")
-    st.write("HAHA")
 
 
 # --- RUN NAVIGATION ---
