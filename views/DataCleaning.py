@@ -86,6 +86,14 @@ def extract_deal_info(product_name, exclude_outliers, kol_outliers):
         return special_phrases[0] if special_phrases else "No KOLs"
 
 
+def update_FSP():
+    st.session_state.is_FSP = not st.session_state.is_FSP
+
+
+def update_FORMAT():
+    st.session_state.is_FORMAT = not st.session_state.is_FORMAT
+
+
 def get_default_periods(min_date, max_date):
     periods = []
     current_date = min_date.replace(day=1)  # Start from first day of min_date's month
@@ -126,27 +134,40 @@ def get_default_periods(min_date, max_date):
 
 ########################################################################################################
 
-######################################## SECTION 1: Define Session State ########################################
+#################################### SECTION 1: Define Session State ###################################
 
-list_component = [
-    "columns_cast_numeric",
-    "columns_cast_string",
-    "extract_brands_list",
-    "outliers_size_list",
-    "is_FSP",
-    "is_FORMAT",
-    "exclude_outliers_list",
-    "kol_outliers_list",
+list_component_none = [
+    "upload_file",
+    "upload_file_name",
+    "df",
+    "default_numeric_columns",
+    "default_string_columns",
+    "default_brand_names",
+    "default_brand_new_option",
+    "default_outliers_size",
+    "default_size_new_option",
+    "default_exclude_outliers",
+    "default_exclude_new_option",
+    "default_kol_outliers",
+    "default_kol_new_option",
 ]
 
-# Khởi tạo các components là None
-for component in list_component:
+list_component_bool = ["is_FORMAT", "is_FSP"]
+
+list_component_list = ["periods"]
+
+# Khởi tạo các components
+for component in list_component_none:
     if component not in st.session_state:
         st.session_state[component] = None
 
-# Khởi tạo periods là list rỗng
-if "periods" not in st.session_state:
-    st.session_state.periods = []
+for component in list_component_bool:
+    if component not in st.session_state:
+        st.session_state[component] = True
+
+for component in list_component_list:
+    if component not in st.session_state:
+        st.session_state[component] = []
 
 ########################################################################################################
 
@@ -157,21 +178,47 @@ st.header(
     divider="gray",
 )
 
+is_data = False
 
 upload_file = st.file_uploader("Choose your data file (CSV format)", type="csv")
 
-if upload_file is None:
+if upload_file is None and st.session_state.upload_file is None:
     st.info("Upload your data file to continue.")
+    print("upload_file is None and st.session_state.upload_file is None")
 
-elif upload_file is not None and not upload_file.name.endswith(".csv"):
-    # Unsupported file format
-    st.error("Unsupported file format. Please upload a CSV file.")
-    st.stop()  # Stops Streamlit from processing further elements
+elif upload_file is None and st.session_state.upload_file is not None:
+    file_buffer = st.session_state.upload_file
 
-else:
-    # Process file through buffer for multiple read
+    st.info("Processing File: " + st.session_state.upload_file_name)
+    print("upload_file is None and st.session_state.upload_file is not None")
+    is_data = True
+
+elif upload_file is not None and st.session_state.upload_file is None:
+    file_name = upload_file.name
     file_buffer = upload_file.read()
 
+    st.session_state.upload_file_name = file_name
+    st.session_state.upload_file = file_buffer
+
+    st.info("Processing File: " + st.session_state.upload_file_name)
+    print("upload_file is not None and st.session_state.upload_file is None")
+    is_data = True
+
+elif upload_file is not None and st.session_state.upload_file is not None:
+    st.session_state.upload_file = None
+    st.session_state.upload_file_name = None
+
+    file_name = upload_file.name
+    file_buffer = upload_file.read()
+
+    st.session_state.upload_file_name = file_name
+    st.session_state.upload_file = file_buffer
+
+    st.info("Processing File: " + st.session_state.upload_file_name)
+    print("upload_file is not None and st.session_state.upload_file is not None")
+    is_data = True
+
+if is_data:
     # Read the original data
     df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
     headers_list = df_original.columns.tolist()
@@ -180,9 +227,9 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df_original)
 
-    ########################################################################################################
+    #####################################################################################################
 
-    ####################################### SECTION 2: Cast Columns ########################################
+    ####################################### SECTION 3: Cast Columns #####################################
 
     st.write("\n")
     st.write("\n")
@@ -199,7 +246,7 @@ else:
         st.subheader("**String Format**")
 
         # Specified default columns
-        default_string_columns = [
+        string_columns = [
             "Order ID",
             "Seller SKU",
             "SKU ID",
@@ -208,20 +255,20 @@ else:
         ]
 
         # Khởi tạo session state trước
-        columns_cast_string = (
-            default_string_columns
-            if st.session_state.columns_cast_string is None
-            else st.session_state.columns_cast_string
+        default_string_columns = (
+            string_columns
+            if st.session_state.default_string_columns is None
+            else st.session_state.default_string_columns
         )
 
         # Identify columns that need to be casted as string format
         columns_cast_string = st.multiselect(
             label="**CHOOSE COLUMNS THAT NEEDED TO BE CASTED AS :red[STRING] FORMAT**",
             options=headers_list,
-            default=columns_cast_string,
+            default=default_string_columns,
         )
 
-        st.session_state.columns_cast_string = columns_cast_string
+        st.session_state.default_string_columns = columns_cast_string
 
         # Create a dictionary for dtype by setting each column in the list to str
         dtype_dict = {col: str for col in columns_cast_string}
@@ -230,30 +277,26 @@ else:
         st.subheader("**Numeric Format**")
 
         # Specified default columns
-        default_numeric_columns = list(
+        numeric_columns = list(
             df_original.loc[:, "SKU Unit Original Price":"Order Refund Amount"].columns
         )
 
         # Khởi tạo session state trước
-        columns_cast_numeric = (
-            default_numeric_columns
-            if st.session_state.columns_cast_numeric is None
-            else st.session_state.columns_cast_numeric
+        default_numeric_columns = (
+            numeric_columns
+            if st.session_state.default_numeric_columns is None
+            else st.session_state.default_numeric_columns
         )
 
         # Identify columns that need to be casted as numeric format
         columns_cast_numeric = st.multiselect(
             label="**CHOOSE COLUMNS THAT NEEDED TO BE CASTED AS :red[NUMERIC] FORMAT**",
             options=headers_list,
-            default=columns_cast_numeric,
+            default=default_numeric_columns,
         )
 
         # Cập nhật session state
-        st.session_state.columns_cast_numeric = columns_cast_numeric
-
-    # Store dataframe in session_state
-    if "df" not in st.session_state:
-        st.session_state.df = None
+        st.session_state.default_numeric_columns = columns_cast_numeric
 
     # Fully read data
     df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
@@ -285,9 +328,9 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ####################################### SECTION 3: Extract Brands ########################################
+    ##################################### SECTION 4: Extract Brands #####################################
 
     st.write("\n")
     st.write("\n")
@@ -304,7 +347,7 @@ else:
         st.subheader("**Brand Names**")
 
         # Specified default brands
-        brands_list = [
+        brand_names = [
             "Abbott Grow",
             "PediaSure",
             "Ensure",
@@ -312,19 +355,36 @@ else:
             "Glucerna",
             "ProSure",
         ]
-        default_brands = brands_list[:5]
+
+        default_brand_names = (
+            brand_names[:5]
+            if st.session_state.default_brand_names is None
+            else st.session_state.default_brand_names
+        )
 
         # Identify columns that need to be casted as string format
         extract_brands_list = st.multiselect(
             label="**CHOOSE BRAND NAME(S) THAT NEEDED TO BE EXTRACTED FROM PRODUCT NAMES**",
-            options=brands_list,
-            default=default_brands,
+            options=brand_names,
+            default=default_brand_names,
+        )
+
+        extract_brands_list_copy = extract_brands_list.copy()
+        st.session_state.default_brand_names = extract_brands_list_copy
+
+        default_brand_new_option = (
+            ""
+            if st.session_state.default_brand_new_option is None
+            else st.session_state.default_brand_new_option
         )
 
         # Add a text input for specifying new options
         brand_new_option = st.text_input(
-            "OR SPECIFY NEW OPTIONS FOR BRAND NAMES (SEPARATE BY COMMAS):"
+            "OR SPECIFY NEW OPTIONS FOR BRAND NAMES (SEPARATE BY COMMAS):",
+            value=default_brand_new_option,
         )
+
+        st.session_state.default_brand_new_option = brand_new_option
 
         # Split and append each new option if provided
         if brand_new_option:
@@ -360,9 +420,9 @@ else:
         # Store dataframe in session_state
         st.session_state.df = df
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ######################################## SECTION 4: Extract Sizes ########################################
+    ###################################### SECTION 5: Extract Sizes #####################################
 
     with col22:
         st.subheader("**Product Sizes**")
@@ -381,24 +441,42 @@ else:
             "[TẶNG BÌNH GIỮ NHIỆT] COMBO 24 CHAI SỮA NƯỚC GLUCERNA HƯƠNG VANI",
         ]
 
+        default_outliers_size = (
+            outliers_size
+            if st.session_state.default_outliers_size is None
+            else st.session_state.default_outliers_size
+        )
+
         # Identify columns that need to be casted as string format
         outliers_size_list = st.multiselect(
             label="**SPECIFY OUTLIERS FOR THE PROCESS OF EXTRACTING PRODUCT SIZE**",
             options=outliers_size,
-            default=outliers_size,
+            default=default_outliers_size,
+        )
+
+        outliers_size_list_copy = outliers_size_list.copy()
+        st.session_state.default_outliers_size = outliers_size_list_copy
+
+        default_size_new_option = (
+            ""
+            if st.session_state.default_size_new_option is None
+            else st.session_state.default_size_new_option
         )
 
         # Add a text input for specifying new options
-        size_new_options = st.text_input(
-            "OR SPECIFY NEW OPTIONS FOR SIZES (SEPARATE BY COMMAS):"
+        size_new_option = st.text_input(
+            "OR SPECIFY NEW OPTIONS FOR SIZES (SEPARATE BY COMMAS):",
+            value=default_size_new_option,
         )
 
+        st.session_state.default_size_new_option = size_new_option
+
         # Split and append each new option if provided
-        if size_new_options:
+        if size_new_option:
             # Split new_option by commas and strip any extra whitespace around each part
             new_options_list = [
                 option.strip()
-                for option in size_new_options.split(",")
+                for option in size_new_option.split(",")
                 if option.strip()
             ]
             # Append each new option to the selected_options list
@@ -421,9 +499,9 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ###################################### SECTION 5: Add FSP & FORMAT #######################################
+    #################################### SECTION 6: Add FSP & FORMAT ####################################
 
     st.divider()
 
@@ -433,7 +511,11 @@ else:
     with col13:
         st.subheader("**Calculated Columns**")
 
-        FSP = st.checkbox("**ADD :red[FSP] COLUMN**", value=True)
+        FSP = st.checkbox(
+            "**ADD :red[FSP] COLUMN**",
+            value=st.session_state.is_FSP,
+            on_change=update_FSP,
+        )
 
         if FSP:
             # Calculate FSP
@@ -444,7 +526,11 @@ else:
             # Store dataframe in session_state
             st.session_state.df = df
 
-        FORMAT = st.checkbox("**ADD :red[FORMAT] COLUMN**", value=True)
+        FORMAT = st.checkbox(
+            "**ADD :red[FORMAT] COLUMN**",
+            value=st.session_state.is_FORMAT,
+            on_change=update_FORMAT,
+        )
 
         df["Format"] = df["Size"].apply(determine_format_type)
 
@@ -455,9 +541,9 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ##################################### SECTION 6: Add KOL Extraction ######################################
+    ################################### SECTION 7: Add KOL Extraction ###################################
 
     st.divider()
 
@@ -468,16 +554,34 @@ else:
     with col14:
         exclude_outliers = ["Hot Deal", "Deal Hè", "Deal E2E"]
 
+        default_exclude_outliers = (
+            exclude_outliers
+            if st.session_state.default_exclude_outliers is None
+            else st.session_state.default_exclude_outliers
+        )
+
         exclude_outliers_list = st.multiselect(
             label="**EXCLUDE OUTLIERS**",
             options=exclude_outliers,
-            default=exclude_outliers,
+            default=default_exclude_outliers,
+        )
+
+        exclude_outliers_list_copy = exclude_outliers_list.copy()
+        st.session_state.default_exclude_outliers = exclude_outliers_list_copy
+
+        default_exclude_new_option = (
+            ""
+            if st.session_state.default_exclude_new_option is None
+            else st.session_state.default_exclude_new_option
         )
 
         # Add a text input for specifying new options
         exclude_outliers_new_option = st.text_input(
-            "OR SPECIFY NEW OPTIONS FOR EXCLUDE OUTLIERS (SEPARATE BY COMMAS):"
+            "OR SPECIFY NEW OPTIONS FOR EXCLUDE OUTLIERS (SEPARATE BY COMMAS):",
+            value=default_exclude_new_option,
         )
+
+        st.session_state.default_exclude_new_option = exclude_outliers_new_option
 
         # Split and append each new option if provided
         if exclude_outliers_new_option:
@@ -499,14 +603,32 @@ else:
     with col24:
         kol_outliers = ["Quyền Leo", "Hằng Du Mục"]
 
+        default_kol_outliers = (
+            kol_outliers
+            if st.session_state.default_kol_outliers is None
+            else st.session_state.default_kol_outliers
+        )
+
         kol_outliers_list = st.multiselect(
-            label="**KOL OUTLIERS**", options=kol_outliers, default=kol_outliers
+            label="**KOL OUTLIERS**", options=kol_outliers, default=default_kol_outliers
+        )
+
+        kol_outliers_list_copy = kol_outliers_list.copy()
+        st.session_state.default_kol_outliers = kol_outliers_list_copy
+
+        default_kol_new_option = (
+            ""
+            if st.session_state.default_kol_new_option is None
+            else st.session_state.default_kol_new_option
         )
 
         # Add a text input for specifying new options
         kol_outliers_new_option = st.text_input(
-            "OR SPECIFY NEW OPTIONS FOR KOL OUTLIERS (SEPARATE BY COMMAS):"
+            "OR SPECIFY NEW OPTIONS FOR KOL OUTLIERS (SEPARATE BY COMMAS):",
+            value=default_kol_new_option,
         )
+
+        st.session_state.default_kol_new_option = kol_outliers_new_option
 
         # Split and append each new option if provided
         if kol_outliers_new_option:
@@ -536,9 +658,9 @@ else:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ######################################## SECTION 7: Divide Periods #######################################
+    ##################################### SECTION 8: Divide Periods #####################################
 
     st.write("\n")
     st.write("\n")
@@ -710,9 +832,9 @@ else:
     else:
         st.info("Add periods using the form above")
 
-    ##########################################################################################################
+    #####################################################################################################
 
-    ########################################### SECTION 8: Download ##########################################
+    ######################################## SECTION 9: Download ########################################
 
     st.write("\n")
     st.write("\n")
