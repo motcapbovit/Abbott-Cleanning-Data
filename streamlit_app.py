@@ -56,10 +56,58 @@ timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
 
 # Add to sidebar
 with st.sidebar:
-    st.markdown("Made with ❤️ by Con Bo Thui")
-    st.divider()  # Add a separator line
-    st.write(f"Version: {VERSION}")
-    st.write(f"Last Updated: {timestamp} (GMT+7)")
+    st.write(f"**Version:** {VERSION}")
+    st.write(f"**Last Updated:** {timestamp}")
+    st.write("\n")
+    st.markdown(
+        """
+        <style>
+        @keyframes border-dance {
+            0% {
+                background-position: left top, right top, right bottom, left bottom;
+            }
+            25% {
+                background-position: right top, right bottom, left bottom, left top;
+            }
+            50% {
+                background-position: right bottom, left bottom, left top, right top;
+            }
+            75% {
+                background-position: left bottom, left top, right top, right bottom;
+            }
+            100% {
+                background-position: left top, right top, right bottom, left bottom;
+            }
+        }
+        
+        .moving-dash-border {
+            --border-width: 3px;
+            --dash-length: 8px;
+            --border-color: #1f708b;
+            
+            padding: 10px 20px;
+            margin: 10px 0;
+            text-align: center;
+            position: relative;
+            background: 
+                linear-gradient(90deg, var(--border-color) 50%, transparent 50%) repeat-x top,
+                linear-gradient(180deg, var(--border-color) 50%, transparent 50%) repeat-y right,
+                linear-gradient(270deg, var(--border-color) 50%, transparent 50%) repeat-x bottom,
+                linear-gradient(0deg, var(--border-color) 50%, transparent 50%) repeat-y left;
+            background-size: 
+                var(--dash-length) var(--border-width),
+                var(--border-width) var(--dash-length),
+                var(--dash-length) var(--border-width),
+                var(--border-width) var(--dash-length);
+            animation: border-dance 2s infinite linear;
+        }
+        </style>
+        <div class="moving-dash-border">
+            Made with ❤️ by Con Bo Thui
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 # --- RUN NAVIGATION ---
