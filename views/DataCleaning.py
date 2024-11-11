@@ -824,7 +824,6 @@ if is_data:
                 st.dataframe(df)
 
         # Add clear all button
-
         if st.button("Clear All"):
             st.session_state.periods = []
             st.rerun()
