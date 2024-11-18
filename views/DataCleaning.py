@@ -5,6 +5,9 @@ import io
 from datetime import datetime
 from calendar import monthrange
 
+# Extra utilities
+from streamlit_extras.add_vertical_space import add_vertical_space
+
 
 ##################################### SECTION 0: Define Functions ######################################
 
@@ -136,6 +139,7 @@ def get_default_periods(min_date, max_date):
 
 #################################### SECTION 1: Define Session State ###################################
 
+
 list_component_none = [
     "upload_file",
     "upload_file_name",
@@ -169,9 +173,11 @@ for component in list_component_list:
     if component not in st.session_state:
         st.session_state[component] = []
 
+
 ########################################################################################################
 
 ######################################## SECTION 2: Upload File ########################################
+
 
 st.header(
     "Upload File",
@@ -223,7 +229,7 @@ if is_data:
     df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
     headers_list = df_original.columns.tolist()
 
-    st.write("\n")
+    add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df_original)
 
@@ -231,9 +237,7 @@ if is_data:
 
     ####################################### SECTION 3: Cast Columns #####################################
 
-    st.write("\n")
-    st.write("\n")
-    st.write("\n")
+    add_vertical_space(3)
     st.header(
         "Cast Columns",
         divider="gray",
@@ -324,7 +328,7 @@ if is_data:
     # Store dataframe in session_state
     st.session_state.df = df
 
-    st.write("\n")
+    add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
@@ -332,9 +336,7 @@ if is_data:
 
     ##################################### SECTION 4: Extract Brands #####################################
 
-    st.write("\n")
-    st.write("\n")
-    st.write("\n")
+    add_vertical_space(3)
     st.header(
         "Add Attributes",
         divider="gray",
@@ -397,7 +399,7 @@ if is_data:
             # Append each new option to the selected_options list
             extract_brands_list.extend(new_options_list)
 
-        st.write("\n")
+        add_vertical_space(1)
         st.write(
             "##### **Selected brand names:**\n"
             + "\n".join(f"- {option}" for option in extract_brands_list)
@@ -482,7 +484,7 @@ if is_data:
             # Append each new option to the selected_options list
             outliers_size_list.extend(new_options_list)
 
-        st.write("\n")
+        add_vertical_space(1)
         st.write(
             "##### **Selected size outliers:**\n"
             + "\n".join(f"- {option}" for option in outliers_size_list)
@@ -495,7 +497,7 @@ if is_data:
         # Store dataframe in session_state
         st.session_state.df = df
 
-    st.write("\n")
+    add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
@@ -537,7 +539,7 @@ if is_data:
         # Store dataframe in session_state
         st.session_state.df = df
 
-    st.write("\n")
+    add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
@@ -594,7 +596,7 @@ if is_data:
             # Append each new option to the selected_options list
             exclude_outliers_list.extend(new_options_list)
 
-        st.write("\n")
+        add_vertical_space(1)
         st.write(
             "##### **Selected exclude outliers:**\n"
             + "\n".join(f"- {option}" for option in exclude_outliers_list)
@@ -641,7 +643,7 @@ if is_data:
             # Append each new option to the selected_options list
             kol_outliers_list.extend(new_options_list)
 
-        st.write("\n")
+        add_vertical_space(1)
         st.write(
             "##### **Selected KOL outliers:**\n"
             + "\n".join(f"- {option}" for option in kol_outliers_list)
@@ -654,7 +656,7 @@ if is_data:
     # Store dataframe in session_state
     st.session_state.df = df
 
-    st.write("\n")
+    add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
@@ -662,9 +664,7 @@ if is_data:
 
     ##################################### SECTION 8: Divide Periods #####################################
 
-    st.write("\n")
-    st.write("\n")
-    st.write("\n")
+    add_vertical_space(3)
     st.header(
         "Divide Periods",
         divider="gray",
@@ -712,10 +712,6 @@ if is_data:
 
             if period in st.session_state.periods:
                 st.warning("This period already exists!")
-            #   st.session_state.periods.pop()
-            # elif period_name in existing_names:
-            #   st.warning("This period name already exists!")
-            # st.session_state.periods.pop()
             elif (start_date, end_date) in existing_dates:
                 st.warning("This pair of start and end date already exists!")
             elif period not in st.session_state.periods:
@@ -819,7 +815,7 @@ if is_data:
                         "Date format error detected. Please ensure your dates are in DD/MM/YYYY HH:MM:SS format"
                     )
 
-            st.write("\n")
+            add_vertical_space(1)
             with st.expander("**Dataframe Preview**"):
                 st.dataframe(df)
 
@@ -835,9 +831,7 @@ if is_data:
 
     ######################################## SECTION 9: Download ########################################
 
-    st.write("\n")
-    st.write("\n")
-    st.write("\n")
+    add_vertical_space(3)
     st.header(
         "Download",
         divider="gray",

@@ -3,7 +3,22 @@ from version import VERSION, LAST_UPDATED
 from datetime import datetime
 import pytz
 
+# Extra utilities
+from streamlit_extras.add_vertical_space import add_vertical_space
+
 st.set_page_config(layout="wide")
+
+
+# --- FUNCTION SETUP ---
+# Hàm hiển thị thông tin trong sidebar
+def display_version_info(updates):
+    with st.sidebar:
+        st.write("**Update Notes:**")
+
+        # Hiển thị các updates dưới dạng bullet points
+        for update in updates:
+            st.markdown(f"• {update}")
+
 
 # --- PAGE SETUP ---
 documentation_page = st.Page(
@@ -58,7 +73,17 @@ timestamp = last_updated.strftime("%d-%m-%Y %H:%M:%S")
 with st.sidebar:
     st.write(f"**Version:** {VERSION}")
     st.write(f"**Last Updated:** {timestamp}")
-    st.write("\n")
+
+    # List chứa các update mới
+    updates = [
+        "Không cần upload lại data file khi chuyển đổi giữa các trang",
+        "Thêm tính năng trực quan dữ liệu",
+        "Chỉnh sửa giao diện người dùng"
+    ]
+    display_version_info(updates=updates)
+
+    add_vertical_space(1)
+
     st.markdown(
         """
         <style>
@@ -103,7 +128,7 @@ with st.sidebar:
         }
         </style>
         <div class="moving-dash-border">
-            Made with ❤️ by Con Bo Thui
+            <b>Made with ❤️ by Con Bo Thui</b>
         </div>
     """,
         unsafe_allow_html=True,

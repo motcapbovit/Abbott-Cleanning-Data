@@ -1,1 +1,3 @@
 xlsxwriter
+plotly
+streamlit_extras
