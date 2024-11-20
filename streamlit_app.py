@@ -78,7 +78,8 @@ with st.sidebar:
     updates = [
         "Không cần upload lại data file khi chuyển đổi giữa các trang",
         "Thêm tính năng trực quan dữ liệu",
-        "Chỉnh sửa giao diện người dùng"
+        "Chỉnh sửa giao diện người dùng",
+        "Thêm tính năng clean province",
     ]
     display_version_info(updates=updates)
 
