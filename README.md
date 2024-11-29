@@ -10,3 +10,7 @@
 
 #### Ver. 1.0.2
 - Thêm tính năng clean province
+
+#### Ver. 1.0.3
+- Cải thiện tính năng clean province (tích hợp translation)
+- Thêm tính năng add period by file

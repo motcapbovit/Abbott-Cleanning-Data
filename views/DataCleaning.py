@@ -6,6 +6,8 @@ import json
 import unicodedata
 from datetime import datetime
 from calendar import monthrange
+from deep_translator import GoogleTranslator
+import time
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -97,6 +99,10 @@ def update_FSP():
 
 def update_FORMAT():
     st.session_state.is_FORMAT = not st.session_state.is_FORMAT
+
+
+def update_CleanProvince():
+    st.session_state.is_CleanProvince = not st.session_state.is_CleanProvince
 
 
 def get_default_periods(min_date, max_date):
@@ -193,7 +199,11 @@ def clean_province(province):
     province = remove_vietnamese_accent(province, outlier_char_map)
 
     # Bước 2: Loại bỏ các từ không cần thiết
-    outlier_province_map = {"dac lak": "dak lak"}
+    outlier_province_map = {
+        "dac lak": "dak lak",
+        "lau dai dac lac": "dak lak",
+        "tan an": "long an",
+    }
     outlier_provinces = ["ha tinh"]
 
     province = remove_unnecessary_words(
@@ -204,8 +214,74 @@ def clean_province(province):
 
 
 # Hàm kiểm tra chuỗi có chứa ký tự đặc biệt
-def contains_special_chars(text):
+def contains_special_chars(text, include_vietnamese=False):
+    if include_vietnamese:
+        vietnamese_chars = r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]"
+        cleaned_text = re.sub(vietnamese_chars, "", text)
+        return bool(re.search(r"[^a-zA-Z\s]", cleaned_text))
     return bool(re.search(r"[^a-zA-Z\s]", text))
+
+
+# Hàm translate các province không phải tiếng việt
+def translate_text(text, target_lang="vi"):
+    translator = GoogleTranslator(target=target_lang)
+    # Tự động phát hiện và dịch
+    translated = translator.translate(text)
+    time.sleep(0.5)
+
+    return {"original": text, "translated": translated}
+
+
+def process_province(text):
+    if contains_special_chars(text, include_vietnamese=False):
+        # Translate text with special characters
+        result = translate_text(text)
+        if isinstance(result, dict):
+            translated = result["translated"]
+            # Check if translated text still contains special characters
+            return (
+                "Others"
+                if contains_special_chars(translated, include_vietnamese=True)
+                else translated
+            )
+    return text
+
+
+def check_null_values(
+    period_df, columns_to_check=["period_name", "start_date", "end_date"]
+):
+    for col in columns_to_check:
+        if period_df[col].isnull().any():
+            st.error(f"Found NULL in period data!")
+            return False
+    return True
+
+
+def check_out_range_dates(period_df, min_date, max_date):
+    less_than_min_date = []
+    more_than_max_date = []
+
+    for i in range(len(period_df)):
+        if period_df["start_date"].iloc[i] < min_date:
+            less_than_min_date.append(period_df["start_date"].iloc[i])
+        if period_df["end_date"].iloc[i] > max_date:
+            more_than_max_date.append(period_df["end_date"].iloc[i])
+
+    if less_than_min_date:
+        st.error(
+            "Periods with start dates earlier than the minimum date of the original data file:"
+        )
+        for date in less_than_min_date:
+            st.write("- " + str(date))
+
+    if more_than_max_date:
+        st.error(
+            "Periods with end dates later than the maximum date of the original data file:"
+        )
+        for date in more_than_max_date:
+            st.write("- " + str(date))
+
+    return False if less_than_min_date or more_than_max_date else True
 
 
 ########################################################################################################
@@ -229,7 +305,8 @@ list_component_none = [
     "default_kol_new_option",
 ]
 
-list_component_bool = ["is_FORMAT", "is_FSP"]
+list_component_bool_true = ["is_FORMAT", "is_FSP"]
+list_component_bool_false = ["is_CleanProvince"]
 
 list_component_list = ["periods"]
 
@@ -238,9 +315,13 @@ for component in list_component_none:
     if component not in st.session_state:
         st.session_state[component] = None
 
-for component in list_component_bool:
+for component in list_component_bool_true:
     if component not in st.session_state:
         st.session_state[component] = True
+
+for component in list_component_bool_false:
+    if component not in st.session_state:
+        st.session_state[component] = False
 
 for component in list_component_list:
     if component not in st.session_state:
@@ -415,20 +496,28 @@ if is_data:
         divider="gray",
     )
 
-    df["Province After"] = df["Province"].apply(clean_province)
-
-    # Tạo một cột mới để xử lý các province có ký tự đặc biệt
-    df["Province After"] = df["Province After"].apply(
-        lambda x: "Others" if contains_special_chars(x) else x
+    CleanProvince = st.checkbox(
+        "**CLEAN :red[PROVINCE] COLUMN**",
+        value=st.session_state.is_CleanProvince,
+        on_change=update_CleanProvince,
     )
 
-    with open("province_mapping.json", "r", encoding="utf-8") as f:
-        province_mapping = json.load(f)
+    if CleanProvince:
+        # Clean province
+        df["Clean Province"] = (
+            df["Province"]
+            .apply(clean_province)
+            .apply(process_province)
+            .apply(clean_province)
+        )
 
-    df["Province After"] = df["Province After"].map(province_mapping)
+        with open("province_mapping.json", "r", encoding="utf-8") as f:
+            province_mapping = json.load(f)
 
-    # Store dataframe in session_state
-    st.session_state.df = df
+        df["Clean Province"] = df["Clean Province"].map(province_mapping)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
 
     add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
@@ -524,9 +613,9 @@ if is_data:
         # Store dataframe in session_state
         st.session_state.df = df
 
-    #####################################################################################################
+    ####################################################################################################
 
-    ###################################### SECTION 5: Extract Sizes #####################################
+    ##################################### SECTION 5: Extract Sizes #####################################
 
     with col22:
         st.subheader("**Product Sizes**")
@@ -603,9 +692,9 @@ if is_data:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    #####################################################################################################
+    ####################################################################################################
 
-    ##################################### SECTION 6: Add NEW COLUMNS ####################################
+    #################################### SECTION 6: Add NEW COLUMNS ####################################
 
     st.divider()
 
@@ -645,9 +734,9 @@ if is_data:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    #####################################################################################################
+    ####################################################################################################
 
-    ################################### SECTION 7: Add KOL Extraction ###################################
+    ################################### SECTION 7: Add KOL Extraction ##################################
 
     st.divider()
 
@@ -762,9 +851,9 @@ if is_data:
     with st.expander("**Dataframe Preview**"):
         st.dataframe(df)
 
-    #####################################################################################################
+    ####################################################################################################
 
-    ##################################### SECTION 8: Divide Periods #####################################
+    ##################################### SECTION 8: Divide Periods ####################################
 
     add_vertical_space(3)
     st.header(
@@ -780,73 +869,176 @@ if is_data:
     min_date = df["Created Time"].min().date()
     max_date = df["Created Time"].max().date()
 
-    form_submitted = False
+    tab1, tab2, tab3 = st.tabs(["Add Default", "Add Manually", "Add by File"])
 
-    # Add period form
-    with st.form("add_period_form"):
-        col15, col25, col35 = st.columns(3)
-        with col15:
-            period_name = st.text_input("Period Name")
-        with col25:
-            start_date = st.date_input(
-                "Start Date", value=min_date, min_value=min_date, max_value=max_date
-            )
-        with col35:
-            end_date = st.date_input(
-                "End Date", value=max_date, min_value=min_date, max_value=max_date
-            )
+    with tab1:
+        add_defaults = st.button("Add Default Periods")
 
-        submitted = st.form_submit_button("Add Period")
-        st.markdown("**OR**")
-        add_defaults = st.form_submit_button("Add Default Periods")
+        if add_defaults:
+            default_periods = get_default_periods(min_date, max_date)
+            new_periods_added = 0
 
-        if submitted and not period_name:
-            st.error("Please enter period name!")
-            print(st.session_state.periods)
-        elif submitted and start_date and end_date:
-            form_submitted = True
+            for period in default_periods:
+                if period not in st.session_state.periods:
+                    # existing_names = [p[0] for p in st.session_state.periods]
+                    existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
 
-    if form_submitted:
-        if start_date <= end_date:
-            period = (period_name, start_date, end_date)
-            # existing_names = [p[0] for p in st.session_state.periods]
-            existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
+                    if period in st.session_state.periods:
+                        st.warning(
+                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                        )
+                    elif (period[1], period[2]) in existing_dates:
+                        st.warning(
+                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                        )
+                    elif period not in st.session_state.periods:
+                        # Check for overlapping periods
+                        has_overlap = False
+                        for existing_start, existing_end in existing_dates:
+                            if not (
+                                period[2] < pd.Timestamp(existing_start).date()
+                                or period[1] > pd.Timestamp(existing_end).date()
+                            ):
+                                has_overlap = True
+                                break
 
-            if period in st.session_state.periods:
-                st.warning("This period already exists!")
-            elif (start_date, end_date) in existing_dates:
-                st.warning("This pair of start and end date already exists!")
-            elif period not in st.session_state.periods:
-                st.session_state.periods.append(period)
-                st.success("Period added successfully!")
+                        if has_overlap:
+                            st.warning(
+                                f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) overlaps with an existing period!"
+                            )
+                        else:
+                            st.session_state.periods.append(period)
+                            new_periods_added += 1
 
-        else:
-            st.error("End date must be after start date!")
-            st.stop()
+            if new_periods_added > 0:
+                st.success(f"Added {new_periods_added} default periods successfully!")
 
-    if add_defaults:
-        default_periods = get_default_periods(min_date, max_date)
-        new_periods_added = 0
+    with tab2:
 
-        for period in default_periods:
-            if period not in st.session_state.periods:
+        form_submitted = False
+
+        # Add period form
+        with st.form("add_period_form"):
+            col15, col25, col35 = st.columns(3)
+            with col15:
+                period_name = st.text_input("Period Name")
+            with col25:
+                start_date = st.date_input(
+                    "Start Date", value=min_date, min_value=min_date, max_value=max_date
+                )
+            with col35:
+                end_date = st.date_input(
+                    "End Date", value=max_date, min_value=min_date, max_value=max_date
+                )
+
+            submitted = st.form_submit_button("Add Period")
+
+            if submitted and not period_name:
+                st.error("Please enter period name!")
+                print(st.session_state.periods)
+            elif submitted and start_date and end_date:
+                form_submitted = True
+
+        if form_submitted:
+            if start_date <= end_date:
+                period = (period_name, start_date, end_date)
                 # existing_names = [p[0] for p in st.session_state.periods]
                 existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
 
                 if period in st.session_state.periods:
-                    st.warning(
-                        f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
-                    )
-                elif (period[1], period[2]) in existing_dates:
-                    st.warning(
-                        f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
-                    )
+                    st.warning("This period already exists!")
+                elif (start_date, end_date) in existing_dates:
+                    st.warning("This pair of start and end date already exists!")
                 elif period not in st.session_state.periods:
-                    st.session_state.periods.append(period)
-                    new_periods_added += 1
+                    # Check for overlapping periods
+                    has_overlap = False
+                    for existing_start, existing_end in existing_dates:
+                        if not (
+                            end_date < pd.Timestamp(existing_start).date()
+                            or start_date > pd.Timestamp(existing_end).date()
+                        ):
+                            has_overlap = True
+                            break
 
-        if new_periods_added > 0:
-            st.success(f"Added {new_periods_added} default periods successfully!")
+                    if has_overlap:
+                        st.warning("This period overlaps with an existing period!")
+                    else:
+                        st.session_state.periods.append(period)
+                        st.success("Period added successfully!")
+
+            else:
+                st.error("End date must be after start date!")
+                st.stop()
+
+    with tab3:
+        upload_file = st.file_uploader(
+            "Choose your data file (XLSX format)", type="xlsx"
+        )
+        is_period_data = False
+
+        if upload_file:
+            period_df = pd.read_excel(upload_file)
+
+            # Phase 1 check: NULL values
+            if not check_null_values(period_df):
+                st.stop()
+
+            # Phase 2 check: Out range dates
+            period_df["start_date"] = pd.to_datetime(
+                period_df["start_date"], format="%d/%m/%Y"
+            )
+            period_df["end_date"] = pd.to_datetime(
+                period_df["end_date"], format="%d/%m/%Y"
+            )
+            min_date = pd.Timestamp(min_date)
+            max_date = pd.Timestamp(max_date)
+
+            if not check_out_range_dates(period_df, min_date, max_date):
+                st.stop()
+
+            # Phase 3 check: Invalid dates
+            invalid_dates = period_df[period_df["start_date"] > period_df["end_date"]]
+            if not invalid_dates.empty:
+                st.error("End date must be after start date!")
+                st.stop()
+
+            # Add new periods
+            new_periods_added = 0
+
+            for _, row in period_df.iterrows():
+                period = (row["period_name"], row["start_date"], row["end_date"])
+                if period not in st.session_state.periods:
+                    existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
+
+                    if period in st.session_state.periods:
+                        st.warning(
+                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                        )
+                    elif (period[1], period[2]) in existing_dates:
+                        st.warning(
+                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                        )
+                    elif period not in st.session_state.periods:
+                        # Check for overlapping periods
+                        has_overlap = False
+                        for existing_start, existing_end in existing_dates:
+                            if not (
+                                period[2] < pd.Timestamp(existing_start)
+                                or period[1] > pd.Timestamp(existing_end)
+                            ):
+                                has_overlap = True
+                                break
+
+                        if has_overlap:
+                            st.warning(
+                                f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) overlaps with an existing period!"
+                            )
+                        else:
+                            st.session_state.periods.append(period)
+                            new_periods_added += 1
+
+            if new_periods_added > 0:
+                st.success(f"Added {new_periods_added} default periods successfully!")
 
     # # Display and manage periods
     if st.session_state.periods:
@@ -926,12 +1118,9 @@ if is_data:
             st.session_state.periods = []
             st.rerun()
 
-    else:
-        st.info("Add periods using the form above")
+    ####################################################################################################
 
-    #####################################################################################################
-
-    ######################################## SECTION 9: Download ########################################
+    ######################################## SECTION 9: Download #######################################
 
     add_vertical_space(3)
     st.header(
@@ -940,12 +1129,12 @@ if is_data:
     )
 
     # Dummy code for prettier layout
-    col15, col25, col35, col45, col55, col56 = st.columns(6)
+    col15, col25, col35, col45, col55, col65 = st.columns(6)
+    timestamp = get_timestamp_string()
 
     with col35:
         # CSV Download
         csv_data = convert_df_to_csv(df)
-        timestamp = get_timestamp_string()
         st.download_button(
             label="📥 Download as CSV",
             data=csv_data,
@@ -957,7 +1146,6 @@ if is_data:
     with col45:
         # Excel Download
         excel_data = convert_df_to_excel(df)
-        timestamp = get_timestamp_string()
         st.download_button(
             label="📥 Download as Excel",
             data=excel_data,
