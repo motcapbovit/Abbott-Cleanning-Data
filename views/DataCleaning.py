@@ -340,7 +340,7 @@ st.header(
 
 is_data = False
 
-upload_file = st.file_uploader("Choose your data file (CSV format)", type="csv")
+upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type="csv")
 
 if upload_file is None and st.session_state.upload_file is None:
     st.info("Upload your data file to continue.")
@@ -972,7 +972,7 @@ if is_data:
 
     with tab3:
         upload_file = st.file_uploader(
-            "Choose your data file (XLSX format)", type="xlsx"
+            "CHOOSE YOUR PERIOD DATA FILE (XLSX FORMAT)", type="xlsx"
         )
         is_period_data = False
 
