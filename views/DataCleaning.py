@@ -976,6 +976,10 @@ if is_data:
         )
         is_period_data = False
 
+        st.markdown(
+            "You can download a sample file [here](https://docs.google.com/spreadsheets/u/0/d/1BJ2DSfOU1p75r1lF7RWB0QBs6UL9ln28W56UB-fT2oM/export?format=xlsx)"
+        )
+
         if upload_file:
             period_df = pd.read_excel(upload_file)
 
