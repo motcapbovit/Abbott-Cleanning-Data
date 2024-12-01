@@ -25,6 +25,9 @@ def extract_size(product_name):
 
     # Step 3: Find any word that contains both digits and specified units
     for word in words:
+        if word.lower() == "5g":
+            continue
+
         # Check if the word contains both digits and either 'g', 'kg', or 'ml'
         if re.search(r"\d", word) and re.search(r"(g|kg|ml)", word, re.IGNORECASE):
             return word.lower()  # Return the matched word as size info
@@ -488,7 +491,7 @@ if is_data:
 
     ####################################################################################################
 
-    ##################################### SECTION 5: Clean Columns ####################################
+    ##################################### SECTION 4: Clean Columns ####################################
 
     add_vertical_space(3)
     st.header(
@@ -525,7 +528,7 @@ if is_data:
 
     ####################################################################################################
 
-    ##################################### SECTION 4: Extract Brands ####################################
+    ##################################### SECTION 5: Extract Brands ####################################
 
     add_vertical_space(3)
     st.header(
@@ -615,7 +618,7 @@ if is_data:
 
     ####################################################################################################
 
-    ##################################### SECTION 5: Extract Sizes #####################################
+    ##################################### SECTION 6: Extract Sizes #####################################
 
     with col22:
         st.subheader("**Product Sizes**")
