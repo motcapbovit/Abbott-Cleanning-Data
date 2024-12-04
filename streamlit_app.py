@@ -76,8 +76,8 @@ with st.sidebar:
 
     # List chứa các update mới
     updates = [
-        "Cải thiện tính năng clean province (tích hợp translation)",
-        "Thêm tính năng add period by file",
+        "Hỗ trợ upload file excel",
+        "Bổ sung trang documentation",
     ]
     display_version_info(updates=updates)
 
