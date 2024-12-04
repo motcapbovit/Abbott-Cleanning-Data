@@ -12,7 +12,11 @@ A robust data processing tool for TikTok Seller Center analytics, focusing on cl
 
 ## 📦 Latest Updates
 
-### Version 1.0.3 🔥🔥
+### Version 1.0.4 🔥🔥
+- Added XLSX file support
+- Updated documentation
+
+### Version 1.0.3 
 - Enhanced province name cleaning algorithm
 - Added period division via file upload
 - Improved data processing efficiency

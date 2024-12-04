@@ -298,6 +298,8 @@ for component in list_component_list:
 
 ######################################## SECTION 1: Upload File ########################################
 
+# Title and description
+st.title("Abbott Cleaning Data: A data processing toolkit for TikTok Seller Center analytics")
 
 st.header(
     "Upload File",
