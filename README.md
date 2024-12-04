@@ -1,26 +1,77 @@
 ## ***Abbott Cleaning Data: A repository for Cleanning and Manipulating Data from TikTok Seller Center***
 
-## 🔆 Introduction
-This repository is to clean data gather from tiktok seller center, in addition extracting features and add more necessary columns which facilitating the process of analyzing figures.
+A robust data processing tool for TikTok Seller Center analytics, focusing on cleaning, feature extraction, and enhanced data visualization.
 
-## 📝 Version log
-- **[1.0.0]**: Launch the project.
-- **[1.0.1]**: Add session state (i.e. cache memory), data visualization and enhance UI.
-- **[1.0.2]**: Add demo cleaning province strings function.
-- **[1.0.3]**: 🔥🔥 Enhance cleanning province function to official version & add function to divide period by upload period data file.
+## 🚀 Features
 
-## 📄 Documentation
-This tool currently contains 2 main page: Data Cleaning and Visualization.
+- **Automated Data Cleaning**: Streamlined processing of TikTok Seller Center exports
+- **Smart Feature Extraction**: Extract brands, sizes, and KOL information from product names
+- **Advanced Period Division**: Flexible time-based data segmentation
+- **Interactive Visualization**: Built-in data visualization capabilities
+- **Caching System**: Session state management for improved performance
 
-### Data Cleaning
-#### Section 1: Upload file
-- Files accepted currently is with CSV format, in the near future it will develop to xlsx format
-- It is crucial to upload the data file has the correct format with the data from tiktok seller center, strongly recommend to use the file has just been exported from tiktok seller center
-- After uploading the file, user can view the raw data before processing in data preview expander tab
+## 📦 Latest Updates
 
-#### Section 2: Cast columns
-- Multiple columns are not in their correct format or the user's desired format, therefore it should be casted either to string or numeric format
-- You can only choose the columns that exists in the dataframe, several columns have been set as default to be casted
+### Version 1.0.3 🔥🔥
+- Enhanced province name cleaning algorithm
+- Added period division via file upload
+- Improved data processing efficiency
 
-#### Section 3: Clean columns
-- The columns 
+### Version 1.0.2
+- Introduced province string cleaning functionality
+
+### Version 1.0.1
+- Added session state caching
+- Implemented data visualization
+- Enhanced user interface
+
+### Version 1.0.0
+- Initial release
+
+## 🛠 Core Functionalities
+
+### Data Cleaning Module
+
+1. **File Upload**
+   - Supports CSV format (XLSX support coming soon)
+   - Direct integration with TikTok Seller Center exports
+   - Raw data preview functionality
+
+2. **Data Type Conversion**
+   - Flexible column type casting (string/numeric)
+   - Pre-configured default column mappings
+   - Custom column selection
+
+3. **String Normalization**
+   - Automated province name standardization
+   - Consistent string formatting
+
+4. **Feature Extraction**
+   - Brand name extraction with custom brand list support
+   - Size extraction with exception handling
+   - KOL information extraction with customizable rules
+
+5. **Calculated Fields**
+   - FSP calculation
+   - Format standardization
+   - Custom column generation
+
+### Period Division System
+
+- Multiple period division methods:
+  - Default templates
+  - Manual period definition
+  - Bulk import via file
+- Non-overlapping period validation
+- Flexible time-based segmentation
+
+## 🔜 Roadmap
+
+- XLSX file format support
+- Enhanced visualization capabilities
+- Additional data cleaning algorithms
+- Expanded feature extraction options
+
+## 📝 Note
+
+For optimal results, use data directly exported from TikTok Seller Center. This ensures compatibility and accurate processing of all features.
