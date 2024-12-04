@@ -1,4 +1,4 @@
-## ***Abbott Cleaning Data: A repository for Cleanning and Manipulating Data from TikTok Seller Center***
+## ***Abbott Cleaning Data: An Awesome Data Toolkit***
 
 A robust data processing tool for TikTok Seller Center analytics, focusing on cleaning, feature extraction, and enhanced data visualization.
 

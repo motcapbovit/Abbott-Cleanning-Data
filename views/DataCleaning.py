@@ -250,43 +250,6 @@ def process_province(text):
     return text
 
 
-def check_null_values(
-    period_df, columns_to_check=["period_name", "start_date", "end_date"]
-):
-    for col in columns_to_check:
-        if period_df[col].isnull().any():
-            st.error(f"Found NULL in period data!")
-            return False
-    return True
-
-
-def check_out_range_dates(period_df, min_date, max_date):
-    less_than_min_date = []
-    more_than_max_date = []
-
-    for i in range(len(period_df)):
-        if period_df["start_date"].iloc[i] < min_date:
-            less_than_min_date.append(period_df["start_date"].iloc[i])
-        if period_df["end_date"].iloc[i] > max_date:
-            more_than_max_date.append(period_df["end_date"].iloc[i])
-
-    if less_than_min_date:
-        st.error(
-            "Periods with start dates earlier than the minimum date of the original data file:"
-        )
-        for date in less_than_min_date:
-            st.write("- " + str(date))
-
-    if more_than_max_date:
-        st.error(
-            "Periods with end dates later than the maximum date of the original data file:"
-        )
-        for date in more_than_max_date:
-            st.write("- " + str(date))
-
-    return False if less_than_min_date or more_than_max_date else True
-
-
 ########################################################################################################
 
 #################################### SECTION 0-2: Define Session State ###################################
@@ -343,7 +306,8 @@ st.header(
 
 is_data = False
 
-upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type="csv")
+allowed_types = ["csv", "xlsx"]
+upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
 
 if upload_file is None and st.session_state.upload_file is None:
     st.info("Upload your data file to continue.")
@@ -383,7 +347,13 @@ elif upload_file is not None and st.session_state.upload_file is not None:
 
 if is_data:
     # Read the original data
-    df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
+    file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+
+    if file_extension == "csv":
+        df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
+    else:  # xlsx or xls
+        df_original = pd.read_excel(io.BytesIO(file_buffer))
+
     headers_list = df_original.columns.tolist()
 
     add_vertical_space(1)
@@ -460,7 +430,12 @@ if is_data:
         st.session_state.default_numeric_columns = columns_cast_numeric
 
     # Fully read data
-    df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+    file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+
+    if file_extension == "csv":
+        df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+    else:  # xlsx or xls
+        df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
     st.session_state.df = df
 
     # Apply the cleaning transformation to each column in the list
@@ -986,11 +961,6 @@ if is_data:
         if upload_file:
             period_df = pd.read_excel(upload_file)
 
-            # Phase 1 check: NULL values
-            if not check_null_values(period_df):
-                st.stop()
-
-            # Phase 2 check: Out range dates
             period_df["start_date"] = pd.to_datetime(
                 period_df["start_date"], format="%d/%m/%Y"
             )
@@ -1000,52 +970,66 @@ if is_data:
             min_date = pd.Timestamp(min_date)
             max_date = pd.Timestamp(max_date)
 
-            if not check_out_range_dates(period_df, min_date, max_date):
-                st.stop()
-
-            # Phase 3 check: Invalid dates
-            invalid_dates = period_df[period_df["start_date"] > period_df["end_date"]]
-            if not invalid_dates.empty:
-                st.error("End date must be after start date!")
-                st.stop()
-
             # Add new periods
             new_periods_added = 0
 
-            for _, row in period_df.iterrows():
-                period = (row["period_name"], row["start_date"], row["end_date"])
+            for index, row in period_df.iterrows():
+                # Phase 1: Check for null values first
+                if row.isnull().any():
+                    st.warning(f"Row {index + 1} contains null values - skipping")
+                    continue
+
+                start_date = pd.to_datetime(row["start_date"], format="%d/%m/%Y")
+                end_date = pd.to_datetime(row["end_date"], format="%d/%m/%Y")
+                min_date = pd.Timestamp(min_date)
+                max_date = pd.Timestamp(max_date)
+
+                # Phase 2: Check start_date before end_date
+                if start_date > end_date:
+                    st.warning(f"Row {index + 1}: End date must be after start date!")
+                    continue
+
+                # Phase 3: Check date range
+                if start_date < min_date or end_date > max_date:
+                    st.warning(
+                        f"Row {index + 1}: Dates must be between {min_date.strftime('%Y-%m-%d')} and {max_date.strftime('%Y-%m-%d')}!"
+                    )
+                    continue
+
+                # Process valid period
+                period = (row["period_name"], start_date, end_date)
                 if period not in st.session_state.periods:
                     existing_dates = [(p[1], p[2]) for p in st.session_state.periods]
 
                     if period in st.session_state.periods:
                         st.warning(
-                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                            f"Period ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}) already exists!"
                         )
-                    elif (period[1], period[2]) in existing_dates:
+                    elif (start_date, end_date) in existing_dates:
                         st.warning(
-                            f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) already exists!"
+                            f"Period ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}) already exists!"
                         )
-                    elif period not in st.session_state.periods:
+                    else:
                         # Check for overlapping periods
                         has_overlap = False
                         for existing_start, existing_end in existing_dates:
                             if not (
-                                period[2] < pd.Timestamp(existing_start)
-                                or period[1] > pd.Timestamp(existing_end)
+                                end_date < pd.Timestamp(existing_start)
+                                or start_date > pd.Timestamp(existing_end)
                             ):
                                 has_overlap = True
                                 break
 
                         if has_overlap:
                             st.warning(
-                                f"Period ({period[1].strftime('%Y-%m-%d')} to {period[2].strftime('%Y-%m-%d')}) overlaps with an existing period!"
+                                f"Period ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}) overlaps with an existing period!"
                             )
                         else:
                             st.session_state.periods.append(period)
                             new_periods_added += 1
 
             if new_periods_added > 0:
-                st.success(f"Added {new_periods_added} default periods successfully!")
+                st.success(f"Added {new_periods_added} periods successfully!")
 
     # # Display and manage periods
     if st.session_state.periods:
