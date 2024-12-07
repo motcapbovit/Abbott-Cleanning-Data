@@ -16,134 +16,11 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 ##################################### SECTION 0-1: Define Functions ######################################
 
 
-def extract_size(product_name):
-    # Step 1: Replace special characters (except '.') with spaces
-    cleaned_name = re.sub(r"[^\w\s\.]", " ", product_name)
-
-    # Step 2: Split the cleaned name into individual words
-    words = cleaned_name.split()
-
-    # Step 3: Find any word that contains both digits and specified units
-    for word in words:
-        if word.lower() == "5g":
-            continue
-
-        # Check if the word contains both digits and either 'g', 'kg', or 'ml'
-        if re.search(r"\d", word) and re.search(r"(g|kg|ml)", word, re.IGNORECASE):
-            return word.lower()  # Return the matched word as size info
-    return None  # Return None if no match is found
-
-
-@st.cache_data
-def convert_df_to_csv(df):
-    """Convert dataframe to CSV format"""
-    return df.to_csv(index=False).encode("utf-8-sig")
-
-
-@st.cache_data
-def convert_df_to_excel(df):
-    """Convert dataframe to Excel format"""
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df.to_excel(writer, sheet_name="Sheet1", index=False)
-        # Auto-adjust columns' width
-        worksheet = writer.sheets["Sheet1"]
-        for i, col in enumerate(df.columns):
-            # Find the maximum length of the column
-            column_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
-            worksheet.set_column(i, i, column_len)
-
-    output.seek(0)
-    return output.getvalue()
-
-
-def get_timestamp_string():
-    """Get current timestamp as string"""
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
-
-
-def determine_format_type(size):
-    return (
-        "LIQ"
-        if "ml" in str(size).lower()
-        else "PWD" if "g" in str(size).lower() else "No format"
-    )
-
-
-def extract_deal_info(product_name, exclude_outliers, kol_outliers):
-    # Find all square brackets in product names
-    brackets = re.findall(r"\[(.*?)\]", product_name)
-
-    # Remove words that contain any word in exclude_outliers
-    brackets = [
-        b
-        for b in brackets
-        if all(excl.lower() not in b.lower() for excl in exclude_outliers)
-    ]
-
-    # Check whether any words in square bracket contain "DEAL"
-    deal_phrases = [phrase for phrase in brackets if "DEAL" in phrase.upper()]
-
-    if deal_phrases:
-        # Get the words positioned after the "DEAL" word in the square bracket
-        deal_info = deal_phrases[0].split("DEAL")[1].strip().upper()
-        return deal_info
-    else:
-        # Check whether there are any KOLs in the product names
-        special_phrases = [
-            kol.upper() for kol in kol_outliers if kol.upper() in product_name.upper()
-        ]
-        return special_phrases[0] if special_phrases else "No KOLs"
-
-
-def update_FSP():
-    st.session_state.is_FSP = not st.session_state.is_FSP
-
-
-def update_FORMAT():
-    st.session_state.is_FORMAT = not st.session_state.is_FORMAT
+## SECTION 3 ##
 
 
 def update_CleanProvince():
     st.session_state.is_CleanProvince = not st.session_state.is_CleanProvince
-
-
-def get_default_periods(min_date, max_date):
-    periods = []
-    current_date = min_date.replace(day=1)  # Start from first day of min_date's month
-
-    while current_date <= max_date:
-        # Get the last day of current month
-        _, last_day = monthrange(current_date.year, current_date.month)
-        month_end = current_date.replace(day=last_day)
-
-        # If we're in the last month and max_date is before month end
-        if month_end > max_date:
-            month_end = max_date
-
-        # Calculate period end dates
-        double_day_end = min(current_date.replace(day=13), month_end)
-        mid_month_end = min(current_date.replace(day=20), month_end)
-
-        # Only add periods if they fall within our date range
-        if current_date <= double_day_end:
-            periods.append((f"Double Day", current_date, double_day_end))
-
-        mid_month_start = double_day_end.replace(day=14)
-        if mid_month_start <= month_end and mid_month_start <= max_date:
-            periods.append((f"Mid Month", mid_month_start, mid_month_end))
-
-        pay_day_start = mid_month_end.replace(day=21)
-        if pay_day_start <= month_end and pay_day_start <= max_date:
-            periods.append((f"Pay Day", pay_day_start, month_end))
-
-        # Move to next month
-        if current_date.month == 12:
-            current_date = current_date.replace(year=current_date.year + 1, month=1)
-        else:
-            current_date = current_date.replace(month=current_date.month + 1)
-
-    return periods
 
 
 def remove_vietnamese_accent(text, special_char_map):
@@ -250,6 +127,185 @@ def process_province(text):
     return text
 
 
+## SECTION 5 ##
+
+
+def extract_size(product_name):
+    # Step 1: Replace special characters (except '.') with spaces
+    cleaned_name = re.sub(r"[^\w\s\.]", " ", product_name)
+
+    # Step 2: Split the cleaned name into individual words
+    words = cleaned_name.split()
+
+    # Step 3: Find any word that contains both digits and specified units
+    for word in words:
+        # Dummy coding: just for the case of SIMILAC 5G
+        if word.lower() == "5g":
+            continue
+
+        # Check if the word contains both digits and either 'g', 'kg', or 'ml'
+        if re.search(r"\d", word) and re.search(r"(g|kg|ml)", word, re.IGNORECASE):
+            return word.lower()  # Return the matched word as size info
+    return None  # Return None if no match is found
+
+
+## SECTION 6 ##
+
+
+def update_FSP():
+    st.session_state.is_FSP = not st.session_state.is_FSP
+
+
+def update_FORMAT():
+    st.session_state.is_FORMAT = not st.session_state.is_FORMAT
+
+
+def update_SUBTOTAL_USD():
+    st.session_state.is_SUBTOTAL_USD = not st.session_state.is_SUBTOTAL_USD
+
+
+def determine_format_type(size):
+    return (
+        "LIQ"
+        if "ml" in str(size).lower()
+        else "PWD" if "g" in str(size).lower() else "No format"
+    )
+
+
+## SECTION 7 ##
+
+
+def extract_deal_info(product_name, exclude_outliers, kol_outliers):
+    # Find all square brackets in product names
+    brackets = re.findall(r"\[(.*?)\]", product_name)
+
+    # Remove words that contain any word in exclude_outliers
+    brackets = [
+        b
+        for b in brackets
+        if all(excl.lower() not in b.lower() for excl in exclude_outliers)
+    ]
+
+    # Check whether any words in square bracket contain "DEAL"
+    deal_phrases = [phrase for phrase in brackets if "DEAL" in phrase.upper()]
+
+    if deal_phrases:
+        # Get the words positioned after the "DEAL" word in the square bracket
+        deal_info = deal_phrases[0].split("DEAL")[1].strip().upper()
+        return deal_info
+    else:
+        # Check whether there are any KOLs in the product names
+        special_phrases = [
+            kol.upper() for kol in kol_outliers if kol.upper() in product_name.upper()
+        ]
+        return special_phrases[0] if special_phrases else "No KOLs"
+
+
+## SECTION 8 ##
+
+
+def get_default_periods(min_date, max_date):
+    periods = []
+    current_date = min_date.replace(day=1)  # Start from first day of min_date's month
+
+    while current_date <= max_date:
+        # Get the last day of current month
+        _, last_day = monthrange(current_date.year, current_date.month)
+        month_end = current_date.replace(day=last_day)
+
+        # If we're in the last month and max_date is before month end
+        if month_end > max_date:
+            month_end = max_date
+
+        # Calculate period end dates
+        double_day_end = min(current_date.replace(day=13), month_end)
+        mid_month_end = min(current_date.replace(day=20), month_end)
+
+        # Only add periods if they fall within our date range
+        if current_date <= double_day_end:
+            periods.append((f"Double Day", current_date, double_day_end))
+
+        mid_month_start = double_day_end.replace(day=14)
+        if mid_month_start <= month_end and mid_month_start <= max_date:
+            periods.append((f"Mid Month", mid_month_start, mid_month_end))
+
+        pay_day_start = mid_month_end.replace(day=21)
+        if pay_day_start <= month_end and pay_day_start <= max_date:
+            periods.append((f"Pay Day", pay_day_start, month_end))
+
+        # Move to next month
+        if current_date.month == 12:
+            current_date = current_date.replace(year=current_date.year + 1, month=1)
+        else:
+            current_date = current_date.replace(month=current_date.month + 1)
+
+    return periods
+
+
+## SECTION 9 ##
+
+
+@st.cache_data
+def convert_df_to_csv(df):
+    """Convert dataframe to CSV format"""
+    return df.to_csv(index=False).encode("utf-8-sig")
+
+
+# @st.cache_data
+# def convert_df_to_excel(df):
+#     """Convert dataframe to Excel format"""
+#     output = io.BytesIO()
+#     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+#         df.to_excel(writer, sheet_name="Sheet1", index=False)
+#         # Auto-adjust columns' width
+#         worksheet = writer.sheets["Sheet1"]
+#         for i, col in enumerate(df.columns):
+#             # Find the maximum length of the column
+#             column_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+#             worksheet.set_column(i, i, column_len)
+
+#     output.seek(0)
+#     return output.getvalue()
+
+
+@st.cache_data
+def convert_df_to_excel(df):
+    """Convert dataframe to Excel format"""
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, sheet_name="Sheet1", index=False)
+
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets["Sheet1"]
+
+        # Create center alignment format
+        center_format = workbook.add_format({"align": "center"})
+
+        # Find Brand column index
+        brand_col_idx = list(df.columns).index("Brand")
+
+        # Auto-adjust columns' width
+        for i, col in enumerate(df.columns):
+            # Find the maximum length of the column
+            column_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+
+            # Apply center format to Brand column, normal width adjustment for others
+            if i == brand_col_idx:
+                worksheet.set_column(i, i, column_len, center_format)
+            else:
+                worksheet.set_column(i, i, column_len)
+
+    # Reset pointer to the start of BytesIO object
+    output.seek(0)
+    return output.getvalue()
+
+
+def get_timestamp_string():
+    """Get current timestamp as string"""
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
 ########################################################################################################
 
 #################################### SECTION 0-2: Define Session State ###################################
@@ -271,7 +327,7 @@ list_component_none = [
     "default_kol_new_option",
 ]
 
-list_component_bool_true = ["is_FORMAT", "is_FSP"]
+list_component_bool_true = ["is_FORMAT", "is_FSP", "is_SUBTOTAL_USD"]
 list_component_bool_false = ["is_CleanProvince"]
 
 list_component_list = ["periods"]
@@ -299,7 +355,9 @@ for component in list_component_list:
 ######################################## SECTION 1: Upload File ########################################
 
 # Title and description
-st.title("Abbott Cleaning Data: A data processing toolkit for TikTok Seller Center analytics")
+st.title(
+    "Abbott Cleaning Data: A data processing toolkit for TikTok Seller Center analytics"
+)
 
 st.header(
     "Upload File",
@@ -705,7 +763,26 @@ if is_data:
             on_change=update_FORMAT,
         )
 
-        df["Format"] = df["Size"].apply(determine_format_type)
+        if FORMAT:
+            df["Format"] = df["Size"].apply(determine_format_type)
+
+            # Store dataframe in session_state
+            st.session_state.df = df
+
+        SUBTOTAL_USD = st.checkbox(
+            "**ADD :red[SKU SUBTOTAL AFTER DISCOUNT (USD))] COLUMN**",
+            value=st.session_state.is_SUBTOTAL_USD,
+            on_change=update_SUBTOTAL_USD,
+        )
+
+        if SUBTOTAL_USD:
+            # Tính giá trị mới và lưu tạm vào một cột mới
+            df["SKU Subtotal After Discount (USD)"] = (
+                df["SKU Subtotal After Discount"] / 23600
+            ).round(2)
+
+            # Store dataframe in session_state
+            st.session_state.df = df
 
         # Store dataframe in session_state
         st.session_state.df = df
