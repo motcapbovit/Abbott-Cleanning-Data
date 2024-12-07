@@ -3,4 +3,3 @@ plotly
 streamlit_extras
 deep-translator
 openpyxl
-fireducks

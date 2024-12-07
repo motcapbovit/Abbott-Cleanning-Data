@@ -1,5 +1,4 @@
 import pandas as pd
-import fireducks.pandas as pd_enhance
 import streamlit as st
 import re
 import io
@@ -1144,78 +1143,40 @@ if is_data:
                             st.rerun()
 
         # # Process and download section
-        # if st.button("Process All Periods"):
-        #     try:
-        #         # Convert the 'Created Time' column to datetime format with the correct format
-        #         df["Created Time"] = pd.to_datetime(
-        #             df["Created Time"], format="%d/%m/%Y %H:%M:%S"
-        #         )
-
-        #         # Store dataframe in session_state
-        #         st.session_state.df = df
-
-        #         df["Period"] = "No Period"
-
-        #         # Store dataframe in session_state
-        #         st.session_state.df = df
-
-        #         for name, start_date, end_date in st.session_state.periods:
-        #             start_dt = pd.to_datetime(start_date)
-        #             end_dt = pd.to_datetime(end_date) + pd.Timedelta(
-        #                 hours=23, minutes=59, seconds=59
-        #             )
-        #             mask = (df["Created Time"] >= start_dt) & (
-        #                 df["Created Time"] <= end_dt
-        #             )
-        #             df.loc[mask, "Period"] = name
-
-        #             # Store dataframe in session_state
-        #             st.session_state.df = df
-
-        #     except Exception as e:
-        #         st.error(f"Error processing data: {str(e)}")
-        #         # Add more detailed error information
-        #         if "Created Time" in str(e):
-        #             st.error(
-        #                 "Date format error detected. Please ensure your dates are in DD/MM/YYYY HH:MM:SS format"
-        #             )
-
-        #     add_vertical_space(1)
-        #     with st.expander("**Dataframe Preview**"):
-        #         st.dataframe(df)
-
-        # Process and download section
         if st.button("Process All Periods"):
-            df_fireducks = pd_enhance.DataFrame(df)
             try:
-                # Convert the 'Created Time' column to datetime format
-                df_fireducks["Created Time"] = pd_enhance.to_datetime(
-                    df_fireducks["Created Time"], format="%d/%m/%Y %H:%M:%S"
+                # Convert the 'Created Time' column to datetime format with the correct format
+                df["Created Time"] = pd.to_datetime(
+                    df["Created Time"], format="%d/%m/%Y %H:%M:%S"
                 )
 
                 # Convert Created Time to date only for comparison
-                df_fireducks["Created Date"] = df_fireducks["Created Time"].dt.date
-
-                df_fireducks["Period"] = "No Period"
-
-                for name, start_date, end_date in st.session_state.periods:
-                    # Convert start and end dates to date objects
-                    start_dt = pd_enhance.to_datetime(start_date).date()
-                    end_dt = pd_enhance.to_datetime(end_date).date()
-
-                    # Compare dates only
-                    mask = (df_fireducks["Created Date"] >= start_dt) & (
-                        df_fireducks["Created Date"] <= end_dt
-                    )
-                    df_fireducks.loc[mask, "Period"] = name
-
-                # Drop the temporary Created Date column if you don't need it
-                df_fireducks = df_fireducks.drop("Created Date", axis=1)
-
-                df = pd.DataFrame(df_fireducks.values, columns=df_fireducks.columns)
+                df["Created Date"] = df["Created Time"].dt.date
 
                 # Store dataframe in session_state
                 st.session_state.df = df
+
+                df["Period"] = "No Period"
+
+                # Store dataframe in session_state
+                st.session_state.df = df
+
+                for name, start_date, end_date in st.session_state.periods:
+                    start_dt = pd.to_datetime(start_date).date()
+                    end_dt = pd.to_datetime(end_date).date()
+
+                    # Compare dates only
+                    mask = (df["Created Date"] >= start_dt) & (
+                        df["Created Date"] <= end_dt
+                    )
+                    df.loc[mask, "Period"] = name
+
+                # Drop the temporary Created Date column if you don't need it
+                df = df.drop("Created Date", axis=1)
+
+                # Store dataframe in session_state
+                st.session_state.df = df
+
             except Exception as e:
                 st.error(f"Error processing data: {str(e)}")
                 # Add more detailed error information
