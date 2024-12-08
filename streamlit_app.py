@@ -76,8 +76,8 @@ with st.sidebar:
 
     # List chứa các update mới
     updates = [
-        "Hỗ trợ upload file excel",
-        "Bổ sung trang documentation",
+        "Chuyển cột SKU Subtotal thành USD",
+        "Bổ sung tính năng thêm cột ngày tháng",
     ]
     display_version_info(updates=updates)
 

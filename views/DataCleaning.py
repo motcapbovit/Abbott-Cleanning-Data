@@ -164,6 +164,10 @@ def update_SUBTOTAL_USD():
     st.session_state.is_SUBTOTAL_USD = not st.session_state.is_SUBTOTAL_USD
 
 
+def update_DATE():
+    st.session_state.is_DATE = not st.session_state.is_DATE
+
+
 def determine_format_type(size):
     return (
         "LIQ"
@@ -327,7 +331,7 @@ list_component_none = [
     "default_kol_new_option",
 ]
 
-list_component_bool_true = ["is_FORMAT", "is_FSP", "is_SUBTOTAL_USD"]
+list_component_bool_true = ["is_FORMAT", "is_FSP", "is_SUBTOTAL_USD", "is_DATE"]
 list_component_bool_false = ["is_CleanProvince"]
 
 list_component_list = ["periods"]
@@ -770,7 +774,7 @@ if is_data:
             st.session_state.df = df
 
         SUBTOTAL_USD = st.checkbox(
-            "**ADD :red[SKU SUBTOTAL AFTER DISCOUNT (USD))] COLUMN**",
+            "**ADD :red[SKU SUBTOTAL AFTER DISCOUNT (USD)] COLUMN**",
             value=st.session_state.is_SUBTOTAL_USD,
             on_change=update_SUBTOTAL_USD,
         )
@@ -780,6 +784,27 @@ if is_data:
             df["SKU Subtotal After Discount (USD)"] = (
                 df["SKU Subtotal After Discount"] / 23600
             ).round(2)
+
+            # Store dataframe in session_state
+            st.session_state.df = df
+
+        DATE = st.checkbox(
+            "**ADD :red[DATE TIME] COLUMNS**",
+            value=st.session_state.is_DATE,
+            on_change=update_DATE,
+        )
+
+        if DATE:
+            # Convert the 'Created Time' column to datetime format with the correct format
+            df["Created Time"] = pd.to_datetime(
+                df["Created Time"], format="%d/%m/%Y %H:%M:%S"
+            )
+
+            # Convert Created Time to date only for comparison
+            df["Created Date"] = df["Created Time"].dt.date
+
+            # Thêm cột mới với định dạng YYYY/MM
+            df["Created Year Month"] = df["Created Time"].dt.strftime("%Y-%m")
 
             # Store dataframe in session_state
             st.session_state.df = df
@@ -1145,13 +1170,6 @@ if is_data:
         # # Process and download section
         if st.button("Process All Periods"):
             try:
-                # Convert the 'Created Time' column to datetime format with the correct format
-                df["Created Time"] = pd.to_datetime(
-                    df["Created Time"], format="%d/%m/%Y %H:%M:%S"
-                )
-
-                # Convert Created Time to date only for comparison
-                df["Created Date"] = df["Created Time"].dt.date
 
                 # Store dataframe in session_state
                 st.session_state.df = df
@@ -1172,7 +1190,7 @@ if is_data:
                     df.loc[mask, "Period"] = name
 
                 # Drop the temporary Created Date column if you don't need it
-                df = df.drop("Created Date", axis=1)
+                # df = df.drop("Created Date", axis=1)
 
                 # Store dataframe in session_state
                 st.session_state.df = df
