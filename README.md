@@ -12,7 +12,14 @@ A robust data processing tool for TikTok Seller Center analytics, focusing on cl
 
 ## 📦 Latest Updates
 
-### Version 1.0.4 🔥🔥
+### Version 1.0.6 🔥🔥
+- Added gift extraction
+
+### Version 1.0.5
+- Converted the SKU Subtotal column to USD
+- Added a feature to include date columns
+
+### Version 1.0.4 
 - Added XLSX file support
 - Updated documentation
 

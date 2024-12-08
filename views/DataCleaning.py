@@ -180,32 +180,68 @@ def determine_format_type(size):
 
 
 def extract_deal_info(product_name, exclude_outliers, kol_outliers):
-    # Find all square brackets in product names
+    # Kiểm tra KOL trước
+    special_phrases = [
+        kol.upper() for kol in kol_outliers if kol.upper() in product_name.upper()
+    ]
+
+    # Nếu tìm thấy KOL thì trả về ngay
+    if special_phrases:
+        return special_phrases[0]
+
+    # Nếu không tìm thấy KOL, tiếp tục xử lý DEAL
     brackets = re.findall(r"\[(.*?)\]", product_name)
 
-    # Remove words that contain any word in exclude_outliers
+    # Loại bỏ các từ trong exclude_outliers
     brackets = [
         b
         for b in brackets
         if all(excl.lower() not in b.lower() for excl in exclude_outliers)
     ]
 
-    # Check whether any words in square bracket contain "DEAL"
+    # Tìm các cụm từ chứa DEAL
     deal_phrases = [phrase for phrase in brackets if "DEAL" in phrase.upper()]
 
     if deal_phrases:
-        # Get the words positioned after the "DEAL" word in the square bracket
+        # Lấy thông tin sau từ DEAL
         deal_info = deal_phrases[0].split("DEAL")[1].strip().upper()
         return deal_info
-    else:
-        # Check whether there are any KOLs in the product names
-        special_phrases = [
-            kol.upper() for kol in kol_outliers if kol.upper() in product_name.upper()
-        ]
-        return special_phrases[0] if special_phrases else "No KOLs"
+
+    # Nếu không tìm thấy cả KOL và DEAL
+    return "No KOLs"
 
 
 ## SECTION 8 ##
+
+
+def extract_gift_name(product_name, list_outliers):
+    # Kiểm tra outliers trước
+    for key, value in list_outliers:
+        if key in product_name:
+            return value
+
+    # Nếu không có outlier nào, tiếp tục xử lý bình thường
+    brackets = re.findall(r"\[(.*?)\]", product_name)
+
+    # Kiểm tra trong các cụm ngoặc vuông
+    for bracket in brackets:
+        if "tặng" in bracket.lower():
+            text_lower = bracket.lower()
+            gift_index = text_lower.find("tặng")
+            if gift_index != -1:
+                return bracket[gift_index:]
+
+    # Nếu không tìm thấy trong ngoặc vuông, tìm trong cả product name
+    text_lower = product_name.lower()
+    gift_index = text_lower.find("tặng")
+    if gift_index != -1:
+        return product_name[gift_index:]
+
+    # Nếu không tìm thấy gift nào
+    return "NO GIFT"
+
+
+## SECTION 9 ##
 
 
 def get_default_periods(min_date, max_date):
@@ -246,7 +282,7 @@ def get_default_periods(min_date, max_date):
     return periods
 
 
-## SECTION 9 ##
+## SECTION 10 ##
 
 
 @st.cache_data
@@ -352,6 +388,36 @@ for component in list_component_bool_false:
 for component in list_component_list:
     if component not in st.session_state:
         st.session_state[component] = []
+
+if "gifts" not in st.session_state:
+    st.session_state["gifts"] = [
+        ("TĂNG KHĂN CHOÀNG TẮM", "TẶNG KHĂN CHOÀNG TẮM"),
+        ("TẶNG GHÉ SOFA HƯƠU VÀNG", "TẶNG GHẾ SOFA HƯƠU VÀNG"),
+        (
+            "TẶNG LY THUỶ TINH ENSURE GOLD MỚI CẢI TIẾN DẠNG BỘT HƯƠNG VANI 400G",
+            "TẶNG LY THUỶ TINH",
+        ),
+        (
+            "TẶNG ẤM ĐUN COMBO 3 LON SỮA ENSURE GOLD CẢI TIẾN MỚI DẠNG BỘT HƯƠNG VANI 850G",
+            "TẶNG ẤM ĐUN",
+        ),
+        (
+            "TẶNG LY THỦY TINH LON ENSURE GOLD CẢI TIẾN MỚI DẠNG BỘT HƯƠNG VANI 400G",
+            "TẶNG LY THỦY TINH",
+        ),
+        (
+            "TẶNG CÂN COMBO 2 LON SỮA ENSURE GOLD CẢI TIẾN MỚI DẠNG BỘT HƯƠNG VANI 850G",
+            "TẶNG CÂN",
+        ),
+        (
+            "TẶNG BÌNH GIỮ NHIỆT LON ENSURE GOLD CẢI TIẾN MỚI DẠNG BỘT HƯƠNG VANI 850G",
+            "TẶNG BÌNH GIỮ NHIỆT",
+        ),
+        (
+            "[DEAL HÈ] [DATE TỪ 01.01.2025 TRỞ ĐI] 1 Lon Thực phẩm Dinh Dưỡng Sữa Bột PediaSure 400g, Túi Đeo Chéo",
+            "TÚI ĐEO CHÉO",
+        ),
+    ]
 
 
 ########################################################################################################
@@ -935,7 +1001,97 @@ if is_data:
 
     ####################################################################################################
 
-    ##################################### SECTION 8: Divide Periods ####################################
+    ################################### SECTION 8: Add Gift Extraction ##################################
+
+    st.divider()
+
+    st.subheader("**Gift Extraction**")
+
+    form_submitted = False
+
+    # Add period form
+    with st.form("add_gift_form"):
+        col15, col25 = st.columns(2)
+        with col15:
+            gift_key = st.text_input("Gift Outlier Key")
+        with col25:
+            gift_value = st.text_input("Gift Outlier Value")
+
+        submitted = st.form_submit_button("Add Gift Outlier")
+
+        if submitted and not gift_key:
+            st.error("Please enter gift outlier key!")
+        elif submitted and not gift_value:
+            st.error("Please enter gift outlier value!")
+        elif submitted and gift_key and gift_value:
+            form_submitted = True
+
+    if form_submitted:
+        gift = (gift_key, gift_value)
+        existing_gift_keys = [g[0] for g in st.session_state.gifts]
+
+        if gift in st.session_state.gifts:
+            st.warning("This gift outlier already exists!")
+        elif gift[0] in existing_gift_keys:
+            st.warning("This gift outlier key already exists!")
+        else:
+            st.session_state.gifts.append(gift)
+            st.success("Gift outlier added successfully!")
+
+    ## Display and manage periods
+    if st.session_state.gifts:  # Thay đổi cách kiểm tra này
+        st.write("##### Current Gift Outliers")
+
+        # Tạo 2 cột chính
+        col16, col26 = st.columns(2)
+
+        # Tính số period cho mỗi cột
+        total_gifts = len(st.session_state.gifts)
+        gifts_per_col = (total_gifts + 1) // 2  # Làm tròn lên
+
+        for i, (key, value) in enumerate(st.session_state.gifts):
+            # Xác định period này thuộc cột nào
+            current_col = col16 if i < gifts_per_col else col26
+
+            # Tạo container cho period
+            with current_col:
+                gift_container = st.container()
+                with gift_container:
+                    col161, col261 = st.columns(
+                        [3, 1]
+                    )  # Chia container thành 2 phần cho nội dung và nút remove
+
+                    with col161:
+                        st.write(f"Gift {i+1}\n- Key : {key}\n- Value: {value}")
+                    with col261:
+                        if st.button(f"Remove", key=f"remove_{i}"):
+                            st.session_state.gifts.pop(i)
+                            st.rerun()
+
+        ## Process and download section
+        if st.button("Process All Gifts"):
+            # Store dataframe in session_state
+            st.session_state.df = df
+
+            df["Gift"] = df["Product Name"].apply(
+                lambda x: extract_gift_name(x, st.session_state.gifts)
+            )
+
+            # Store dataframe in session_state
+            st.session_state.df = df
+
+            add_vertical_space(1)
+            with st.expander("**Dataframe Preview**"):
+                st.dataframe(df)
+
+        # Add clear all button
+        if st.button("Clear All"):
+            st.session_state.gifts = []
+            st.rerun()
+
+    ####################################################################################################
+
+    ##################################### SECTION 9: Divide Periods ####################################
 
     add_vertical_space(3)
     st.header(
@@ -1001,14 +1157,14 @@ if is_data:
 
         # Add period form
         with st.form("add_period_form"):
-            col15, col25, col35 = st.columns(3)
-            with col15:
+            col17, col27, col37 = st.columns(3)
+            with col17:
                 period_name = st.text_input("Period Name")
-            with col25:
+            with col27:
                 start_date = st.date_input(
                     "Start Date", value=min_date, min_value=min_date, max_value=max_date
                 )
-            with col35:
+            with col37:
                 end_date = st.date_input(
                     "End Date", value=max_date, min_value=min_date, max_value=max_date
                 )
@@ -1031,7 +1187,7 @@ if is_data:
                     st.warning("This period already exists!")
                 elif (start_date, end_date) in existing_dates:
                     st.warning("This pair of start and end date already exists!")
-                elif period not in st.session_state.periods:
+                else:
                     # Check for overlapping periods
                     has_overlap = False
                     for existing_start, existing_end in existing_dates:
@@ -1050,7 +1206,6 @@ if is_data:
 
             else:
                 st.error("End date must be after start date!")
-                st.stop()
 
     with tab3:
         upload_file = st.file_uploader(
@@ -1135,12 +1290,12 @@ if is_data:
             if new_periods_added > 0:
                 st.success(f"Added {new_periods_added} periods successfully!")
 
-    # # Display and manage periods
+    ## Display and manage periods
     if st.session_state.periods:
         st.write("##### Current Periods")
 
         # Tạo 2 cột chính
-        col16, col26 = st.columns(2)
+        col18, col28 = st.columns(2)
 
         # Tính số period cho mỗi cột
         total_periods = len(st.session_state.periods)
@@ -1148,21 +1303,21 @@ if is_data:
 
         for i, (name, start, end) in enumerate(st.session_state.periods):
             # Xác định period này thuộc cột nào
-            current_col = col16 if i < periods_per_col else col26
+            current_col = col18 if i < periods_per_col else col28
 
             # Tạo container cho period
             with current_col:
                 period_container = st.container()
                 with period_container:
-                    col161, col261 = st.columns(
+                    col181, col281 = st.columns(
                         [3, 1]
                     )  # Chia container thành 2 phần cho nội dung và nút remove
 
-                    with col161:
+                    with col181:
                         st.write(
                             f"- Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
                         )
-                    with col261:
+                    with col281:
                         if st.button(f"Remove", key=f"remove_{i}"):
                             st.session_state.periods.pop(i)
                             st.rerun()
@@ -1214,7 +1369,7 @@ if is_data:
 
     ####################################################################################################
 
-    ######################################## SECTION 9: Download #######################################
+    ######################################## SECTION 10: Download #######################################
 
     add_vertical_space(3)
     st.header(
