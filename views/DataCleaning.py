@@ -1064,7 +1064,7 @@ if is_data:
                     with col161:
                         st.write(f"Gift {i+1}\n- Key : {key}\n- Value: {value}")
                     with col261:
-                        if st.button(f"Remove", key=f"remove_{i}"):
+                        if st.button(f"Remove", key=f"remove_gift_{i}"):
                             st.session_state.gifts.pop(i)
                             st.rerun()
 
@@ -1085,7 +1085,7 @@ if is_data:
                 st.dataframe(df)
 
         # Add clear all button
-        if st.button("Clear All"):
+        if st.button("Clear All", key="remove_all_gifts"):
             st.session_state.gifts = []
             st.rerun()
 
@@ -1318,7 +1318,7 @@ if is_data:
                             f"- Period {i+1}: {name} ({start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')})"
                         )
                     with col281:
-                        if st.button(f"Remove", key=f"remove_{i}"):
+                        if st.button(f"Remove", key=f"remove_period_{i}"):
                             st.session_state.periods.pop(i)
                             st.rerun()
 
@@ -1363,7 +1363,7 @@ if is_data:
                 st.dataframe(df)
 
         # Add clear all button
-        if st.button("Clear All"):
+        if st.button("Clear All", key="remove_all_periods"):
             st.session_state.periods = []
             st.rerun()
 
