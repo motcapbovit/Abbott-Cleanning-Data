@@ -83,9 +83,8 @@ st.header("📦 Latest Updates")
 
 st.info(
     """
-**Version 1.0.4**
-- Added XLSX file support
-- Updated documentation
+**Version 1.0.6**
+- Added gift extraction
 """
 )
 
