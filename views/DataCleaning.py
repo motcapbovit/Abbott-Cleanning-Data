@@ -218,24 +218,25 @@ def extract_gift_name(product_name, list_outliers):
     # Kiểm tra outliers trước
     for key, value in list_outliers:
         if key in product_name:
-            return value
+            if "THẺ QUÀ TẶNG" in key:
+                return key
+
+            result = value.upper().replace("TẶNG", "").strip()
+            return result
 
     # Nếu không có outlier nào, tiếp tục xử lý bình thường
     brackets = re.findall(r"\[(.*?)\]", product_name)
 
-    # Kiểm tra trong các cụm ngoặc vuông
+    # Kiểm tra các cụm từ trong ngoặc vuông để tìm chữ "tặng"
     for bracket in brackets:
-        if "tặng" in bracket.lower():
-            text_lower = bracket.lower()
-            gift_index = text_lower.find("tặng")
-            if gift_index != -1:
-                return bracket[gift_index:]
+        if "TẶNG" in bracket.upper():
+            gift_part = bracket.upper().split("TẶNG", 1)[1]  # Lấy phần sau "tặng"
+            return gift_part.strip()
 
-    # Nếu không tìm thấy trong ngoặc vuông, tìm trong cả product name
-    text_lower = product_name.lower()
-    gift_index = text_lower.find("tặng")
-    if gift_index != -1:
-        return product_name[gift_index:]
+    # Nếu không tìm thấy trong ngoặc vuông, tìm trực tiếp trong product_name
+    if "TẶNG" in product_name.upper():
+        gift_part = product_name.upper().split("TẶNG", 1)[1]  # Lấy phần sau "tặng"
+        return gift_part.strip()
 
     # Nếu không tìm thấy gift nào
     return "NO GIFT"
@@ -417,6 +418,7 @@ if "gifts" not in st.session_state:
             "[DEAL HÈ] [DATE TỪ 01.01.2025 TRỞ ĐI] 1 Lon Thực phẩm Dinh Dưỡng Sữa Bột PediaSure 400g, Túi Đeo Chéo",
             "TÚI ĐEO CHÉO",
         ),
+        ("THẺ QUÀ TẶNG", "THẺ QUÀ TẶNG"),
     ]
 
 
