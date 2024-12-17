@@ -219,7 +219,7 @@ def extract_gift_name(product_name, list_outliers):
     for key, value in list_outliers:
         if key in product_name:
             if "THẺ QUÀ TẶNG" in key:
-                return key
+                return value.upper().strip()
 
             result = value.upper().replace("TẶNG", "").strip()
             return result
