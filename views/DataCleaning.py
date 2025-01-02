@@ -176,6 +176,41 @@ def determine_format_type(size):
     )
 
 
+def update_CLP_REGION():
+    st.session_state.is_CLP_REGION = not st.session_state.is_CLP_REGION
+
+
+def extract_clp_region(name):
+    # Quy tắc cho các tỉnh thành
+    rules = {
+        "BÁCH HÓA SỮA BỘT 2": "HCM",
+        "Tuy Hoà": "Phú Yên",
+        "ĐN": "Đà Nẵng",
+        "HN": "Hà Nội",
+        "Q6": "HCM",
+        "Củ Chi": "HCM",
+        "HCM": "HCM",
+        "Hà Nội": "Hà Nội",
+        "Đà Nẵng": "Đà Nẵng",
+        "Tiền Giang": "Tiền Giang",
+        "Hải Phòng": "Hải Phòng",
+        "Bắc Giang": "Bắc Giang",
+        "Long An": "Long An",
+        "Bình Dương": "Bình Dương",
+        "Cần Thơ": "Cần Thơ",
+        "Hải Dương": "Hải Dương",
+        "An Giang": "An Giang",
+        "Kiên Giang": "Kiên Giang",
+        "Đồng Nai": "Đồng Nai",
+        "Bến Tre": "Bến Tre",
+    }
+
+    for key in rules:
+        if key in name:
+            return rules[key]
+    return "Unknown"
+
+
 ## SECTION 7 ##
 
 
@@ -368,7 +403,13 @@ list_component_none = [
     "default_kol_new_option",
 ]
 
-list_component_bool_true = ["is_FORMAT", "is_FSP", "is_SUBTOTAL_USD", "is_DATE"]
+list_component_bool_true = [
+    "is_FORMAT",
+    "is_FSP",
+    "is_SUBTOTAL_USD",
+    "is_DATE",
+    "is_CLP_REGION",
+]
 list_component_bool_false = ["is_CleanProvince"]
 
 list_component_list = ["periods"]
@@ -873,6 +914,18 @@ if is_data:
 
             # Thêm cột mới với định dạng YYYY/MM
             df["Created Year Month"] = df["Created Time"].dt.strftime("%Y-%m")
+
+            # Store dataframe in session_state
+            st.session_state.df = df
+
+        CLP_REGION = st.checkbox(
+            "**ADD :red[CLP REGION] COLUMNS**",
+            value=st.session_state.is_CLP_REGION,
+            on_change=update_CLP_REGION,
+        )
+
+        if CLP_REGION:
+            df["Warehouse Region"] = df["Warehouse Name"].apply(extract_clp_region)
 
             # Store dataframe in session_state
             st.session_state.df = df
