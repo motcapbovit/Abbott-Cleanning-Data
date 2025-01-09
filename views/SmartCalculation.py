@@ -11,7 +11,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 ##################################### SECTION 0-1: Define Functions ######################################
 
 
-def find_best_combinations(list_value, target, num_combinations=10):
+def find_best_combinations(list_value, target, num_combinations=1):
     # Dictionary lưu tổ hợp và tổng của chúng
     combinations_dict = {}
 
@@ -174,6 +174,7 @@ if is_data:
 
     add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):
+        st.write(f"**TARGET: :red[{target}]**")
         st.dataframe(result_df)
 
     #######################################################################################################
