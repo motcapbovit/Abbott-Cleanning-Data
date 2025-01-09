@@ -37,6 +37,11 @@ dashboard_page = st.Page(
     title="Dashboard",
     icon=":material/smart_toy:",
 )
+calculation_page = st.Page(
+    "views/SmartCalculation.py",
+    title="Smart Calculator",
+    icon=":material/smart_toy:",
+)
 
 
 # --- NAVIGATION SETUP ---
@@ -44,6 +49,7 @@ pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
         "DATA TOOLS": [datacleaning_page, dashboard_page],
+        "CALCULATION": [calculation_page]
     }
 )
 
