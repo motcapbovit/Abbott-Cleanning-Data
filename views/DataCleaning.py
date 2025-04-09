@@ -185,6 +185,7 @@ def extract_clp_region(name):
     exception_in_brackets = {
         "q6": "HCM",
         "củ chi": "HCM",
+        "hcm": "HCM",
         "tuy hòa": "Phú Yên",
         "tuy hoà": "Phú Yên",
     }
@@ -213,7 +214,7 @@ def extract_clp_region(name):
         if key in name_lower:
             return value
 
-    return "Unknown"
+    return name
 
 
 ## SECTION 7 ##
