@@ -181,33 +181,38 @@ def update_CLP_REGION():
 
 
 def extract_clp_region(name):
-    # Quy tắc cho các tỉnh thành
-    rules = {
-        "BÁCH HÓA SỮA BỘT 2": "HCM",
-        "Tuy Hoà": "Phú Yên",
-        "ĐN": "Đà Nẵng",
-        "HN": "Hà Nội",
-        "Q6": "HCM",
-        "Củ Chi": "HCM",
-        "HCM": "HCM",
-        "Hà Nội": "Hà Nội",
-        "Đà Nẵng": "Đà Nẵng",
-        "Tiền Giang": "Tiền Giang",
-        "Hải Phòng": "Hải Phòng",
-        "Bắc Giang": "Bắc Giang",
-        "Long An": "Long An",
-        "Bình Dương": "Bình Dương",
-        "Cần Thơ": "Cần Thơ",
-        "Hải Dương": "Hải Dương",
-        "An Giang": "An Giang",
-        "Kiên Giang": "Kiên Giang",
-        "Đồng Nai": "Đồng Nai",
-        "Bến Tre": "Bến Tre",
+    # Dictionary cho phần trong ngoặc
+    exception_in_brackets = {
+        "q6": "HCM",
+        "củ chi": "HCM",
+        "tuy hòa": "Phú Yên",
+        "tuy hoà": "Phú Yên",
     }
 
-    for key in rules:
-        if key in name:
-            return rules[key]
+    # Dictionary cho phần ngoài ngoặc
+    exception_outside = {
+        "hn": "Hà Nội",
+        "đn": "Đà Nẵng",
+        "hcm": "HCM",
+        "bách hóa sữa bột 2": "HCM",
+    }
+
+    # Kiểm tra phần trong ngoặc
+    match = re.search(r"\((.*?)\)", name)
+    if match:
+        region_hint = match.group(1).strip().lower()
+        for key, value in exception_in_brackets.items():
+            if key in region_hint:
+                return value
+        # Nếu không khớp key nào, trả về phần trong ngoặc (chữ hoa đầu từ)
+        return match.group(1).strip().title()
+
+    # Nếu không có ngoặc, kiểm tra tên trực tiếp
+    name_lower = name.lower()
+    for key, value in exception_outside.items():
+        if key in name_lower:
+            return value
+
     return "Unknown"
 
 
