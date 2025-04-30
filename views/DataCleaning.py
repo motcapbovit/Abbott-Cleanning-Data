@@ -168,16 +168,20 @@ def update_DATE():
     st.session_state.is_DATE = not st.session_state.is_DATE
 
 
+def update_CLP_REGION():
+    st.session_state.is_CLP_REGION = not st.session_state.is_CLP_REGION
+
+
+def update_VOUCHER():
+    st.session_state.is_VOUCHER = not st.session_state.is_VOUCHER
+
+
 def determine_format_type(size):
     return (
         "Liquid Milk"
         if "ml" in str(size).lower()
         else "Milk Powder" if "g" in str(size).lower() else "No format"
     )
-
-
-def update_CLP_REGION():
-    st.session_state.is_CLP_REGION = not st.session_state.is_CLP_REGION
 
 
 def extract_clp_region(name):
@@ -415,6 +419,7 @@ list_component_bool_true = [
     "is_SUBTOTAL_USD",
     "is_DATE",
     "is_CLP_REGION",
+    "is_VOUCHER",
 ]
 list_component_bool_false = ["is_CleanProvince"]
 
@@ -935,6 +940,22 @@ if is_data:
 
             # Store dataframe in session_state
             st.session_state.df = df
+
+        VOUCHER = st.checkbox(
+            "**ADD :red[VOUCHER] COLUMN**",
+            value=st.session_state.is_VOUCHER,
+            on_change=update_VOUCHER,
+        )
+
+        if VOUCHER:
+            # Calculate FSP
+            df["VOUCHER"] = (
+                df["SKU Subtotal Before Discount"] / df["SKU Platform Discount"]
+            ) - df["SKU Seller Discount"]
+
+            # Store dataframe in session_state
+            st.session_state.df = df
+
 
         # Store dataframe in session_state
         st.session_state.df = df

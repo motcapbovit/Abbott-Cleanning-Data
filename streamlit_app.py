@@ -82,7 +82,8 @@ with st.sidebar:
 
     # List chứa các update mới
     updates = [
-        "Thêm tính năng trích xuất quà",
+        "Chỉnh sửa tính năng trích xuất brand & format",
+        "Thêm cột Voucher"
     ]
     display_version_info(updates=updates)
 
