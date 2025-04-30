@@ -16,7 +16,7 @@ A robust data processing tool for TikTok Seller Center analytics, focusing on cl
 - Added voucher calculation
 - Adjust the mechanism of brand & format extraction
 
-### And many other versions containing minor changes that are not listed...
+#### And many other versions containing minor changes that are not listed...
 
 ### Version 1.0.6
 - Added gift extraction
