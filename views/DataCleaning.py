@@ -170,9 +170,9 @@ def update_DATE():
 
 def determine_format_type(size):
     return (
-        "LIQ"
+        "Liquid Milk"
         if "ml" in str(size).lower()
-        else "PWD" if "g" in str(size).lower() else "No format"
+        else "Milk Powder" if "g" in str(size).lower() else "No format"
     )
 
 
@@ -698,7 +698,7 @@ if is_data:
 
         # Specified default brands
         brand_names = [
-            "Abbott Grow",
+            "Grow",
             "PediaSure",
             "Ensure",
             "Similac",
