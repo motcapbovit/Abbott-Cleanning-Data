@@ -949,7 +949,7 @@ if is_data:
 
         if VOUCHER:
             # Calculate FSP
-            df["VOUCHER"] = (
+            df["Voucher"] = (
                 df["SKU Subtotal Before Discount"] / df["SKU Platform Discount"]
             ) - df["SKU Seller Discount"]
 
