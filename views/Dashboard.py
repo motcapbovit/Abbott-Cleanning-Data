@@ -3,6 +3,7 @@ import re
 import plotly.express as px
 import unicodedata
 import json
+import time
 from deep_translator import GoogleTranslator
 
 
@@ -137,12 +138,12 @@ if is_data:
         .apply(process_province)
         .apply(clean_province)
     )
-    
+
     with open("province_mapping.json", "r", encoding="utf-8") as f:
         province_mapping = json.load(f)
 
     df["Province After"] = df["Province After"].map(province_mapping)
-    
+
     # Calculate the count of each province
     province_counts = df["Province After"].value_counts().reset_index()
     province_counts.columns = ["Province", "Count"]
