@@ -2,6 +2,9 @@ import streamlit as st
 import re
 import plotly.express as px
 import unicodedata
+import json
+from deep_translator import GoogleTranslator
+
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -37,14 +40,14 @@ def remove_unnecessary_words(province, outlier_province_map, outlier_provinces):
     # Bước 1: Loại bỏ các từ không cần thiết
     province = re.sub(r"\b(thanh pho|pho|province|city)\b", "", province)
 
-    # Bước 2: Xử lý các trường hợp đặc biệt từ danh sách
+    # Bước 2: Xử lý các trường hợp đặc biệt Hà Tĩnh (ha tinh))
     for special_case in outlier_provinces:
         if special_case in province:
             province = special_case  # Case Ha Tinh
         else:
             province = re.sub(r"\btinh\b", "", province)
 
-    # Bước 3: Xử lý các trường hợp đặc biệt khác (dac lak -> dak lak)
+    # Bước 3: Xử lý các trường hợp Đắk Lắk (dac lak -> dak lak)
     for old_name, new_name in outlier_province_map.items():
         if old_name in province:
             province = new_name
@@ -65,7 +68,11 @@ def clean_province(province):
     province = remove_vietnamese_accent(province, outlier_char_map)
 
     # Bước 2: Loại bỏ các từ không cần thiết
-    outlier_province_map = {"dac lak": "dak lak"}
+    outlier_province_map = {
+        "dac lak": "dak lak",
+        "lau dai dac lac": "dak lak",
+        "tan an": "long an",
+    }
     outlier_provinces = ["ha tinh"]
 
     province = remove_unnecessary_words(
@@ -76,8 +83,37 @@ def clean_province(province):
 
 
 # Hàm kiểm tra chuỗi có chứa ký tự đặc biệt
-def contains_special_chars(text):
+def contains_special_chars(text, include_vietnamese=False):
+    if include_vietnamese:
+        vietnamese_chars = r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]"
+        cleaned_text = re.sub(vietnamese_chars, "", text)
+        return bool(re.search(r"[^a-zA-Z\s]", cleaned_text))
     return bool(re.search(r"[^a-zA-Z\s]", text))
+
+
+# Hàm translate các province không phải tiếng việt
+def translate_text(text, target_lang="vi"):
+    translator = GoogleTranslator(target=target_lang)
+    # Tự động phát hiện và dịch
+    translated = translator.translate(text)
+    time.sleep(0.5)
+
+    return {"original": text, "translated": translated}
+
+
+def process_province(text):
+    if contains_special_chars(text, include_vietnamese=False):
+        # Translate text with special characters
+        result = translate_text(text)
+        if isinstance(result, dict):
+            translated = result["translated"]
+            # Check if translated text still contains special characters
+            return (
+                "Others"
+                if contains_special_chars(translated, include_vietnamese=True)
+                else translated
+            )
+    return text
 
 
 ########################################################################################################
@@ -95,13 +131,18 @@ else:
 
 if is_data:
 
-    df["Province After"] = df["Province"].apply(clean_province)
-
-    # Tạo một cột mới để xử lý các province có ký tự đặc biệt
-    df["Province After"] = df["Province After"].apply(
-        lambda x: "Others" if contains_special_chars(x) else x
+    df["Province After"] = (
+        df["Province"]
+        .apply(clean_province)
+        .apply(process_province)
+        .apply(clean_province)
     )
+    
+    with open("province_mapping.json", "r", encoding="utf-8") as f:
+        province_mapping = json.load(f)
 
+    df["Province After"] = df["Province After"].map(province_mapping)
+    
     # Calculate the count of each province
     province_counts = df["Province After"].value_counts().reset_index()
     province_counts.columns = ["Province", "Count"]
@@ -132,4 +173,3 @@ if is_data:
 
     # Hiển thị biểu đồ trong Streamlit
     st.plotly_chart(fig, use_container_width=True)
-
