@@ -291,35 +291,39 @@ def extract_gift_name(product_name, list_outliers):
 
 
 def get_default_periods(min_date, max_date):
+    # Định nghĩa cấu hình cho từng period
+    period_configs = {
+        "Double Day": {"start_day": 1, "end_day": 13},   # Từ ngày 1 đến ngày 13
+        "Mid Month": {"start_day": 14, "end_day": 20},   # Từ ngày 14 đến ngày 20
+        "Pay Day": {"start_day": 21, "end_day": None}    # Từ ngày 21 đến cuối tháng
+    }
+
     periods = []
-    current_date = min_date.replace(day=1)  # Start from first day of min_date's month
+    current_date = min_date.replace(day=1)  # Bắt đầu từ ngày đầu tiên của tháng min_date
 
     while current_date <= max_date:
-        # Get the last day of current month
+        # Lấy ngày cuối cùng của tháng hiện tại
         _, last_day = monthrange(current_date.year, current_date.month)
         month_end = current_date.replace(day=last_day)
-
-        # If we're in the last month and max_date is before month end
+        
+        # Nếu tháng hiện tại vượt quá max_date, điều chỉnh month_end
         if month_end > max_date:
             month_end = max_date
 
-        # Calculate period end dates
-        double_day_end = min(current_date.replace(day=13), month_end)
-        mid_month_end = min(current_date.replace(day=20), month_end)
+        # Duyệt qua từng period trong cấu hình
+        for period_name, config in period_configs.items():
+            start_day = config["start_day"]
+            end_day = config["end_day"] if config["end_day"] else last_day  # Nếu end_day là None, lấy cuối tháng
 
-        # Only add periods if they fall within our date range
-        if current_date <= double_day_end:
-            periods.append((f"Double Day", current_date, double_day_end))
+            # Tính ngày bắt đầu và kết thúc của period
+            period_start = current_date.replace(day=start_day)
+            period_end = current_date.replace(day=min(end_day, month_end.day))
 
-        mid_month_start = double_day_end.replace(day=14)
-        if mid_month_start <= month_end and mid_month_start <= max_date:
-            periods.append((f"Mid Month", mid_month_start, mid_month_end))
+            # Chỉ thêm period nếu nó nằm trong khoảng min_date và max_date
+            if period_start <= max_date and period_end >= min_date and period_start <= period_end:
+                periods.append((period_name, period_start, period_end))
 
-        pay_day_start = mid_month_end.replace(day=21)
-        if pay_day_start <= month_end and pay_day_start <= max_date:
-            periods.append((f"Pay Day", pay_day_start, month_end))
-
-        # Move to next month
+        # Chuyển sang tháng tiếp theo
         if current_date.month == 12:
             current_date = current_date.replace(year=current_date.year + 1, month=1)
         else:

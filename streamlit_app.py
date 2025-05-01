@@ -49,7 +49,7 @@ pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
         "DATA TOOLS": [datacleaning_page, dashboard_page],
-        "CALCULATION": [calculation_page]
+        "CALCULATION": [calculation_page],
     }
 )
 
@@ -81,10 +81,7 @@ with st.sidebar:
     st.write(f"**Last Updated:** {timestamp}")
 
     # List chứa các update mới
-    updates = [
-        "Chỉnh sửa tính năng trích xuất brand & format",
-        "Thêm cột Voucher"
-    ]
+    updates = ["Chỉnh sửa tính năng trích xuất brand & format", "Thêm cột Voucher"]
     display_version_info(updates=updates)
 
     add_vertical_space(1)

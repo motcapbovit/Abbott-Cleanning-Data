@@ -83,8 +83,9 @@ st.header("📦 Latest Updates")
 
 st.info(
     """
-**Version 1.0.6**
-- Added gift extraction
+**Version 1.0.7**
+- Adjust brand & format extraction
+- Added voucher calculation
 """
 )
 
