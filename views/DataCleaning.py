@@ -293,19 +293,21 @@ def extract_gift_name(product_name, list_outliers):
 def get_default_periods(min_date, max_date):
     # Định nghĩa cấu hình cho từng period
     period_configs = {
-        "Double Day": {"start_day": 1, "end_day": 13},   # Từ ngày 1 đến ngày 13
-        "Mid Month": {"start_day": 14, "end_day": 20},   # Từ ngày 14 đến ngày 20
-        "Pay Day": {"start_day": 21, "end_day": None}    # Từ ngày 21 đến cuối tháng
+        "Double Day": {"start_day": 1, "end_day": 13},  # Từ ngày 1 đến ngày 13
+        "Mid Month": {"start_day": 14, "end_day": 20},  # Từ ngày 14 đến ngày 20
+        "Pay Day": {"start_day": 21, "end_day": None},  # Từ ngày 21 đến cuối tháng
     }
 
     periods = []
-    current_date = min_date.replace(day=1)  # Bắt đầu từ ngày đầu tiên của tháng min_date
+    current_date = min_date.replace(
+        day=1
+    )  # Bắt đầu từ ngày đầu tiên của tháng min_date
 
     while current_date <= max_date:
         # Lấy ngày cuối cùng của tháng hiện tại
         _, last_day = monthrange(current_date.year, current_date.month)
         month_end = current_date.replace(day=last_day)
-        
+
         # Nếu tháng hiện tại vượt quá max_date, điều chỉnh month_end
         if month_end > max_date:
             month_end = max_date
@@ -313,14 +315,20 @@ def get_default_periods(min_date, max_date):
         # Duyệt qua từng period trong cấu hình
         for period_name, config in period_configs.items():
             start_day = config["start_day"]
-            end_day = config["end_day"] if config["end_day"] else last_day  # Nếu end_day là None, lấy cuối tháng
+            end_day = (
+                config["end_day"] if config["end_day"] else last_day
+            )  # Nếu end_day là None, lấy cuối tháng
 
             # Tính ngày bắt đầu và kết thúc của period
             period_start = current_date.replace(day=start_day)
             period_end = current_date.replace(day=min(end_day, month_end.day))
 
             # Chỉ thêm period nếu nó nằm trong khoảng min_date và max_date
-            if period_start <= max_date and period_end >= min_date and period_start <= period_end:
+            if (
+                period_start <= max_date
+                and period_end >= min_date
+                and period_start <= period_end
+            ):
                 periods.append((period_name, period_start, period_end))
 
         # Chuyển sang tháng tiếp theo
@@ -953,13 +961,12 @@ if is_data:
 
         if VOUCHER:
             # Calculate FSP
-            df["Voucher"] = (
-                df["SKU Subtotal Before Discount"] / df["SKU Platform Discount"]
-            ) - df["SKU Seller Discount"]
+            df["Voucher"] = df["SKU Platform Discount"] / (
+                df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
+            )
 
             # Store dataframe in session_state
             st.session_state.df = df
-
 
         # Store dataframe in session_state
         st.session_state.df = df
