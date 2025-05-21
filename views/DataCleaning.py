@@ -917,7 +917,7 @@ if is_data:
         if SUBTOTAL_USD:
             # Tính giá trị mới và lưu tạm vào một cột mới
             df["SKU Subtotal After Discount (USD)"] = (
-                df["SKU Subtotal After Discount"] / 23600
+                df["SKU Subtotal After Discount"] / 25800
             ).round(2)
 
             # Store dataframe in session_state
