@@ -81,7 +81,7 @@ with st.sidebar:
     st.write(f"**Last Updated:** {timestamp}")
 
     # List chứa các update mới
-    updates = ["Chỉnh sửa tính năng trích xuất brand & format", "Thêm cột Voucher"]
+    updates = ["Chỉnh logic chia period", "Chỉnh tỉ giá 25800"]
     display_version_info(updates=updates)
 
     add_vertical_space(1)

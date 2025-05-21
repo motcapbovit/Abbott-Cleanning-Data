@@ -1345,11 +1345,11 @@ if is_data:
                     continue
 
                 # Phase 3: Check date range
-                if start_date < min_date or end_date > max_date:
-                    st.warning(
-                        f"Row {index + 1}: Dates must be between {min_date.strftime('%Y-%m-%d')} and {max_date.strftime('%Y-%m-%d')}!"
-                    )
-                    continue
+                # if start_date < min_date or end_date > max_date:
+                #     st.warning(
+                #         f"Row {index + 1}: Dates must be between {min_date.strftime('%Y-%m-%d')} and {max_date.strftime('%Y-%m-%d')}!"
+                #     )
+                #     continue
 
                 # Process valid period
                 period = (row["period_name"], start_date, end_date)
