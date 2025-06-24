@@ -1,4 +1,4 @@
-streamlit==1.44.0
+streamlit==1.45.0
 xlsxwriter
 plotly
 streamlit_extras

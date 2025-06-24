@@ -12,7 +12,11 @@ A robust data processing tool for TikTok Seller Center analytics, focusing on cl
 
 ## 📦 Latest Updates
 
-### Version 1.0.7 🔥🔥 
+### Version 1.0.8 🔥🔥 
+- Adjust period division logic
+- Adjust the exchange rate to 25,800 VND
+
+### Version 1.0.7 
 - Added voucher calculation
 - Adjust the mechanism of brand & format extraction
 

@@ -1,4 +1,5 @@
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 import streamlit as st
 import re
 import io
@@ -636,11 +637,12 @@ if is_data:
 
     # Apply the cleaning transformation to each column in the list
     for col in columns_cast_numeric:
-        if df[col].dtype != "Int64":  # Check if the column is not already Int64
+        if not is_numeric_dtype(df[col]):  # Check if the column is not already Int64
             # Remove non-numeric characters and convert to Int64
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(r"\D", "", regex=True)
-            ).astype("Int64")
+            # df[col] = pd.to_numeric(
+            #     df[col].astype(str).str.replace(r"\D", "", regex=True)
+            # ).astype("Int64")
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df[columns_cast_numeric] = df[columns_cast_numeric].fillna(0)
 
@@ -652,6 +654,7 @@ if is_data:
     df = df.apply(
         lambda x: x.str.replace("\t", "", regex=False) if x.dtype == "object" else x
     )
+
 
     # Store dataframe in session_state
     st.session_state.df = df
@@ -914,7 +917,7 @@ if is_data:
         if SUBTOTAL_USD:
             # Tính giá trị mới và lưu tạm vào một cột mới
             df["SKU Subtotal After Discount (USD)"] = (
-                df["SKU Subtotal After Discount"] / 23600
+                df["SKU Subtotal After Discount"] / 25800
             ).round(2)
 
             # Store dataframe in session_state
@@ -929,7 +932,7 @@ if is_data:
         if DATE:
             # Convert the 'Created Time' column to datetime format with the correct format
             df["Created Time"] = pd.to_datetime(
-                df["Created Time"], format="%d/%m/%Y %H:%M:%S"
+                df["Created Time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
             )
 
             # Convert Created Time to date only for comparison
@@ -1342,11 +1345,11 @@ if is_data:
                     continue
 
                 # Phase 3: Check date range
-                if start_date < min_date or end_date > max_date:
-                    st.warning(
-                        f"Row {index + 1}: Dates must be between {min_date.strftime('%Y-%m-%d')} and {max_date.strftime('%Y-%m-%d')}!"
-                    )
-                    continue
+                # if start_date < min_date or end_date > max_date:
+                #     st.warning(
+                #         f"Row {index + 1}: Dates must be between {min_date.strftime('%Y-%m-%d')} and {max_date.strftime('%Y-%m-%d')}!"
+                #     )
+                #     continue
 
                 # Process valid period
                 period = (row["period_name"], start_date, end_date)
