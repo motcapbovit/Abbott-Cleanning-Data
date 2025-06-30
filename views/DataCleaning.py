@@ -681,8 +681,13 @@ if st.session_state.upload_file_path:
     # Fully read data
     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
 
+    # if file_extension == "csv":
+    #     df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+    # else:  # xlsx or xls
+    #     df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
+
     if file_extension == "csv":
-        df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+        df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
     else:  # xlsx or xls
         df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
     st.session_state.df = df
