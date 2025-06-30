@@ -20,10 +20,12 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 ## SECTION 3 ##
 
 
+@st.cache_data
 def update_CleanProvince():
     st.session_state.is_CleanProvince = not st.session_state.is_CleanProvince
 
 
+@st.cache_data
 def remove_vietnamese_accent(text, special_char_map):
     """
     Loại bỏ dấu tiếng Việt và xử lý các ký tự đặc biệt
@@ -45,6 +47,7 @@ def remove_vietnamese_accent(text, special_char_map):
     return text
 
 
+@st.cache_data
 def remove_unnecessary_words(province, outlier_province_map, outlier_provinces):
     # Lowercase để chuẩn hóa
     province = province.lower()
@@ -73,6 +76,7 @@ def remove_unnecessary_words(province, outlier_province_map, outlier_provinces):
     return province.title()
 
 
+@st.cache_data
 def clean_province(province):
     # Bước 1: Loại bỏ dấu tiếng Việt
     outlier_char_map = {"đ": "d", "Đ": "D", "ð": "d", "Ð": "D"}
@@ -95,6 +99,7 @@ def clean_province(province):
 
 
 # Hàm kiểm tra chuỗi có chứa ký tự đặc biệt
+@st.cache_data
 def contains_special_chars(text, include_vietnamese=False):
     if include_vietnamese:
         vietnamese_chars = r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]"
@@ -104,6 +109,7 @@ def contains_special_chars(text, include_vietnamese=False):
 
 
 # Hàm translate các province không phải tiếng việt
+@st.cache_data
 def translate_text(text, target_lang="vi"):
     translator = GoogleTranslator(target=target_lang)
     # Tự động phát hiện và dịch
@@ -113,6 +119,7 @@ def translate_text(text, target_lang="vi"):
     return {"original": text, "translated": translated}
 
 
+@st.cache_data
 def process_province(text):
     if contains_special_chars(text, include_vietnamese=False):
         # Translate text with special characters
@@ -131,6 +138,7 @@ def process_province(text):
 ## SECTION 5 ##
 
 
+@st.cache_data
 def extract_size(product_name):
     # Step 1: Replace special characters (except '.') with spaces
     cleaned_name = re.sub(r"[^\w\s\.]", " ", product_name)
@@ -153,30 +161,37 @@ def extract_size(product_name):
 ## SECTION 6 ##
 
 
+@st.cache_data
 def update_FSP():
     st.session_state.is_FSP = not st.session_state.is_FSP
 
 
+@st.cache_data
 def update_FORMAT():
     st.session_state.is_FORMAT = not st.session_state.is_FORMAT
 
 
+@st.cache_data
 def update_SUBTOTAL_USD():
     st.session_state.is_SUBTOTAL_USD = not st.session_state.is_SUBTOTAL_USD
 
 
+@st.cache_data
 def update_DATE():
     st.session_state.is_DATE = not st.session_state.is_DATE
 
 
+@st.cache_data
 def update_CLP_REGION():
     st.session_state.is_CLP_REGION = not st.session_state.is_CLP_REGION
 
 
+@st.cache_data
 def update_VOUCHER():
     st.session_state.is_VOUCHER = not st.session_state.is_VOUCHER
 
 
+@st.cache_data
 def determine_format_type(size):
     return (
         "Liquid Milk"
@@ -185,6 +200,7 @@ def determine_format_type(size):
     )
 
 
+@st.cache_data
 def extract_clp_region(name):
     # Dictionary cho phần trong ngoặc
     exception_in_brackets = {
@@ -225,6 +241,7 @@ def extract_clp_region(name):
 ## SECTION 7 ##
 
 
+@st.cache_data
 def extract_deal_info(product_name, exclude_outliers, kol_outliers):
     # Kiểm tra KOL trước
     special_phrases = [
@@ -260,6 +277,7 @@ def extract_deal_info(product_name, exclude_outliers, kol_outliers):
 ## SECTION 8 ##
 
 
+@st.cache_data
 def extract_gift_name(product_name, list_outliers):
     # Kiểm tra outliers trước
     for key, value in list_outliers:
@@ -291,6 +309,7 @@ def extract_gift_name(product_name, list_outliers):
 ## SECTION 9 ##
 
 
+@st.cache_data
 def get_default_periods(min_date, max_date):
     # Định nghĩa cấu hình cho từng period
     period_configs = {
@@ -400,6 +419,7 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 
+@st.cache_data
 def get_timestamp_string():
     """Get current timestamp as string"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -654,7 +674,6 @@ if is_data:
     df = df.apply(
         lambda x: x.str.replace("\t", "", regex=False) if x.dtype == "object" else x
     )
-
 
     # Store dataframe in session_state
     st.session_state.df = df
