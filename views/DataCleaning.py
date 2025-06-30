@@ -9,6 +9,7 @@ from datetime import datetime
 from calendar import monthrange
 from deep_translator import GoogleTranslator
 import time
+import tempfile
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -523,53 +524,84 @@ st.header(
 
 is_data = False
 
-allowed_types = ["csv", "xlsx"]
+# allowed_types = ["csv", "xlsx"]
+# upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
+
+# if upload_file is None and st.session_state.upload_file is None:
+#     st.info("Upload your data file to continue.")
+#     print("upload_file is None and st.session_state.upload_file is None")
+
+# elif upload_file is None and st.session_state.upload_file is not None:
+#     file_buffer = st.session_state.upload_file
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is None and st.session_state.upload_file is not None")
+#     is_data = True
+
+# elif upload_file is not None and st.session_state.upload_file is None:
+#     file_name = upload_file.name
+#     file_buffer = upload_file.read()
+
+#     st.session_state.upload_file_name = file_name
+#     st.session_state.upload_file = file_buffer
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is not None and st.session_state.upload_file is None")
+#     is_data = True
+
+# elif upload_file is not None and st.session_state.upload_file is not None:
+#     st.session_state.upload_file = None
+#     st.session_state.upload_file_name = None
+
+#     file_name = upload_file.name
+#     file_buffer = upload_file.read()
+
+#     st.session_state.upload_file_name = file_name
+#     st.session_state.upload_file = file_buffer
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is not None and st.session_state.upload_file is not None")
+#     is_data = True
+
+# if is_data:
+#     # Read the original data
+#     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+
+#     if file_extension == "csv":
+#         df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
+#     else:  # xlsx or xls
+#         df_original = pd.read_excel(io.BytesIO(file_buffer))
+
+#     headers_list = df_original.columns.tolist()
+
+#     add_vertical_space(1)
+#     with st.expander("**Dataframe Preview**"):
+#         st.dataframe(df_original)
+
+allowed_types = ['csv', 'xlsx']
 upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
 
-if upload_file is None and st.session_state.upload_file is None:
-    st.info("Upload your data file to continue.")
-    print("upload_file is None and st.session_state.upload_file is None")
+if 'upload_file_path' not in st.session_state:
+    st.session_state.upload_file_path = None
 
-elif upload_file is None and st.session_state.upload_file is not None:
-    file_buffer = st.session_state.upload_file
+if upload_file is not None:
+    # Lưu file tạm thời
+    with tempfile.NamedTemporaryFile(delete=False, suffix="." + upload_file.name.split('.')[-1]) as tmp_file:
+        tmp_file.write(upload_file.read())
+        tmp_file_path = tmp_file.name
 
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is None and st.session_state.upload_file is not None")
-    is_data = True
+    st.session_state.upload_file_path = tmp_file_path
+    st.session_state.upload_file_name = upload_file.name
+    st.info(f"Processing File: {upload_file.name}")
 
-elif upload_file is not None and st.session_state.upload_file is None:
-    file_name = upload_file.name
-    file_buffer = upload_file.read()
-
-    st.session_state.upload_file_name = file_name
-    st.session_state.upload_file = file_buffer
-
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is not None and st.session_state.upload_file is None")
-    is_data = True
-
-elif upload_file is not None and st.session_state.upload_file is not None:
-    st.session_state.upload_file = None
-    st.session_state.upload_file_name = None
-
-    file_name = upload_file.name
-    file_buffer = upload_file.read()
-
-    st.session_state.upload_file_name = file_name
-    st.session_state.upload_file = file_buffer
-
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is not None and st.session_state.upload_file is not None")
-    is_data = True
-
-if is_data:
-    # Read the original data
+if st.session_state.upload_file_path:
     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+    file_path = st.session_state.upload_file_path
 
     if file_extension == "csv":
-        df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
-    else:  # xlsx or xls
-        df_original = pd.read_excel(io.BytesIO(file_buffer))
+        df_original = pd.read_csv(file_path, low_memory=False)
+    else:
+        df_original = pd.read_excel(file_path)
 
     headers_list = df_original.columns.tolist()
 
