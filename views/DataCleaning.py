@@ -578,15 +578,17 @@ is_data = False
 #     with st.expander("**Dataframe Preview**"):
 #         st.dataframe(df_original)
 
-allowed_types = ['csv', 'xlsx']
+allowed_types = ["csv", "xlsx"]
 upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
 
-if 'upload_file_path' not in st.session_state:
+if "upload_file_path" not in st.session_state:
     st.session_state.upload_file_path = None
 
 if upload_file is not None:
     # Lưu file tạm thời
-    with tempfile.NamedTemporaryFile(delete=False, suffix="." + upload_file.name.split('.')[-1]) as tmp_file:
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix="." + upload_file.name.split(".")[-1]
+    ) as tmp_file:
         tmp_file.write(upload_file.read())
         tmp_file_path = tmp_file.name
 
@@ -689,7 +691,7 @@ if st.session_state.upload_file_path:
     if file_extension == "csv":
         df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
     else:  # xlsx or xls
-        df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
+        df = pd.read_excel(file_path, dtype=dtype_dict)
     st.session_state.df = df
 
     # Apply the cleaning transformation to each column in the list
