@@ -9,6 +9,7 @@ from datetime import datetime
 from calendar import monthrange
 from deep_translator import GoogleTranslator
 import time
+import tempfile
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -20,10 +21,12 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 ## SECTION 3 ##
 
 
+@st.cache_data
 def update_CleanProvince():
     st.session_state.is_CleanProvince = not st.session_state.is_CleanProvince
 
 
+@st.cache_data
 def remove_vietnamese_accent(text, special_char_map):
     """
     Loại bỏ dấu tiếng Việt và xử lý các ký tự đặc biệt
@@ -45,6 +48,7 @@ def remove_vietnamese_accent(text, special_char_map):
     return text
 
 
+@st.cache_data
 def remove_unnecessary_words(province, outlier_province_map, outlier_provinces):
     # Lowercase để chuẩn hóa
     province = province.lower()
@@ -73,6 +77,7 @@ def remove_unnecessary_words(province, outlier_province_map, outlier_provinces):
     return province.title()
 
 
+@st.cache_data
 def clean_province(province):
     # Bước 1: Loại bỏ dấu tiếng Việt
     outlier_char_map = {"đ": "d", "Đ": "D", "ð": "d", "Ð": "D"}
@@ -95,6 +100,7 @@ def clean_province(province):
 
 
 # Hàm kiểm tra chuỗi có chứa ký tự đặc biệt
+@st.cache_data
 def contains_special_chars(text, include_vietnamese=False):
     if include_vietnamese:
         vietnamese_chars = r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ]"
@@ -104,6 +110,7 @@ def contains_special_chars(text, include_vietnamese=False):
 
 
 # Hàm translate các province không phải tiếng việt
+@st.cache_data
 def translate_text(text, target_lang="vi"):
     translator = GoogleTranslator(target=target_lang)
     # Tự động phát hiện và dịch
@@ -113,6 +120,7 @@ def translate_text(text, target_lang="vi"):
     return {"original": text, "translated": translated}
 
 
+@st.cache_data
 def process_province(text):
     if contains_special_chars(text, include_vietnamese=False):
         # Translate text with special characters
@@ -131,6 +139,7 @@ def process_province(text):
 ## SECTION 5 ##
 
 
+@st.cache_data
 def extract_size(product_name):
     # Step 1: Replace special characters (except '.') with spaces
     cleaned_name = re.sub(r"[^\w\s\.]", " ", product_name)
@@ -153,30 +162,37 @@ def extract_size(product_name):
 ## SECTION 6 ##
 
 
+@st.cache_data
 def update_FSP():
     st.session_state.is_FSP = not st.session_state.is_FSP
 
 
+@st.cache_data
 def update_FORMAT():
     st.session_state.is_FORMAT = not st.session_state.is_FORMAT
 
 
+@st.cache_data
 def update_SUBTOTAL_USD():
     st.session_state.is_SUBTOTAL_USD = not st.session_state.is_SUBTOTAL_USD
 
 
+@st.cache_data
 def update_DATE():
     st.session_state.is_DATE = not st.session_state.is_DATE
 
 
+@st.cache_data
 def update_CLP_REGION():
     st.session_state.is_CLP_REGION = not st.session_state.is_CLP_REGION
 
 
+@st.cache_data
 def update_VOUCHER():
     st.session_state.is_VOUCHER = not st.session_state.is_VOUCHER
 
 
+@st.cache_data
 def determine_format_type(size):
     return (
         "Liquid Milk"
@@ -185,6 +201,7 @@ def determine_format_type(size):
     )
 
 
+@st.cache_data
 def extract_clp_region(name):
     # Dictionary cho phần trong ngoặc
     exception_in_brackets = {
@@ -225,6 +242,7 @@ def extract_clp_region(name):
 ## SECTION 7 ##
 
 
+@st.cache_data
 def extract_deal_info(product_name, exclude_outliers, kol_outliers):
     # Kiểm tra KOL trước
     special_phrases = [
@@ -260,6 +278,7 @@ def extract_deal_info(product_name, exclude_outliers, kol_outliers):
 ## SECTION 8 ##
 
 
+@st.cache_data
 def extract_gift_name(product_name, list_outliers):
     # Kiểm tra outliers trước
     for key, value in list_outliers:
@@ -291,6 +310,7 @@ def extract_gift_name(product_name, list_outliers):
 ## SECTION 9 ##
 
 
+@st.cache_data
 def get_default_periods(min_date, max_date):
     # Định nghĩa cấu hình cho từng period
     period_configs = {
@@ -400,6 +420,7 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 
+@st.cache_data
 def get_timestamp_string():
     """Get current timestamp as string"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -503,53 +524,86 @@ st.header(
 
 is_data = False
 
+# allowed_types = ["csv", "xlsx"]
+# upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
+
+# if upload_file is None and st.session_state.upload_file is None:
+#     st.info("Upload your data file to continue.")
+#     print("upload_file is None and st.session_state.upload_file is None")
+
+# elif upload_file is None and st.session_state.upload_file is not None:
+#     file_buffer = st.session_state.upload_file
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is None and st.session_state.upload_file is not None")
+#     is_data = True
+
+# elif upload_file is not None and st.session_state.upload_file is None:
+#     file_name = upload_file.name
+#     file_buffer = upload_file.read()
+
+#     st.session_state.upload_file_name = file_name
+#     st.session_state.upload_file = file_buffer
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is not None and st.session_state.upload_file is None")
+#     is_data = True
+
+# elif upload_file is not None and st.session_state.upload_file is not None:
+#     st.session_state.upload_file = None
+#     st.session_state.upload_file_name = None
+
+#     file_name = upload_file.name
+#     file_buffer = upload_file.read()
+
+#     st.session_state.upload_file_name = file_name
+#     st.session_state.upload_file = file_buffer
+
+#     st.info("Processing File: " + st.session_state.upload_file_name)
+#     print("upload_file is not None and st.session_state.upload_file is not None")
+#     is_data = True
+
+# if is_data:
+#     # Read the original data
+#     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+
+#     if file_extension == "csv":
+#         df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
+#     else:  # xlsx or xls
+#         df_original = pd.read_excel(io.BytesIO(file_buffer))
+
+#     headers_list = df_original.columns.tolist()
+
+#     add_vertical_space(1)
+#     with st.expander("**Dataframe Preview**"):
+#         st.dataframe(df_original)
+
 allowed_types = ["csv", "xlsx"]
 upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
 
-if upload_file is None and st.session_state.upload_file is None:
-    st.info("Upload your data file to continue.")
-    print("upload_file is None and st.session_state.upload_file is None")
+if "upload_file_path" not in st.session_state:
+    st.session_state.upload_file_path = None
 
-elif upload_file is None and st.session_state.upload_file is not None:
-    file_buffer = st.session_state.upload_file
+if upload_file is not None:
+    # Lưu file tạm thời
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix="." + upload_file.name.split(".")[-1]
+    ) as tmp_file:
+        tmp_file.write(upload_file.read())
+        tmp_file_path = tmp_file.name
 
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is None and st.session_state.upload_file is not None")
-    is_data = True
+    st.session_state.upload_file_path = tmp_file_path
+    st.session_state.upload_file_name = upload_file.name
+    st.info(f"Processing File: {upload_file.name}")
 
-elif upload_file is not None and st.session_state.upload_file is None:
-    file_name = upload_file.name
-    file_buffer = upload_file.read()
-
-    st.session_state.upload_file_name = file_name
-    st.session_state.upload_file = file_buffer
-
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is not None and st.session_state.upload_file is None")
-    is_data = True
-
-elif upload_file is not None and st.session_state.upload_file is not None:
-    st.session_state.upload_file = None
-    st.session_state.upload_file_name = None
-
-    file_name = upload_file.name
-    file_buffer = upload_file.read()
-
-    st.session_state.upload_file_name = file_name
-    st.session_state.upload_file = file_buffer
-
-    st.info("Processing File: " + st.session_state.upload_file_name)
-    print("upload_file is not None and st.session_state.upload_file is not None")
-    is_data = True
-
-if is_data:
-    # Read the original data
+if st.session_state.upload_file_path:
     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
+    file_path = st.session_state.upload_file_path
 
     if file_extension == "csv":
-        df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
-    else:  # xlsx or xls
-        df_original = pd.read_excel(io.BytesIO(file_buffer))
+        df_original = pd.read_csv(file_path, low_memory=False)
+    else:
+        df_original = pd.read_excel(file_path)
 
     headers_list = df_original.columns.tolist()
 
@@ -629,10 +683,15 @@ if is_data:
     # Fully read data
     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
 
+    # if file_extension == "csv":
+    #     df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+    # else:  # xlsx or xls
+    #     df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
+
     if file_extension == "csv":
-        df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
+        df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
     else:  # xlsx or xls
-        df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
+        df = pd.read_excel(file_path, dtype=dtype_dict)
     st.session_state.df = df
 
     # Apply the cleaning transformation to each column in the list
@@ -654,7 +713,6 @@ if is_data:
     df = df.apply(
         lambda x: x.str.replace("\t", "", regex=False) if x.dtype == "object" else x
     )
-
 
     # Store dataframe in session_state
     st.session_state.df = df
