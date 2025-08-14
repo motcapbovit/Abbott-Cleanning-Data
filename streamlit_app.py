@@ -32,6 +32,11 @@ datacleaning_page = st.Page(
     title="Data Cleaning",
     icon=":material/account_tree:",
 )
+datacleaningmulti_page = st.Page(
+    "views/DataCleaningMulltichunks.py",
+    title="Data Cleaning Multichunks",
+    icon=":material/account_tree:",
+)
 dashboard_page = st.Page(
     "views/Dashboard.py",
     title="Dashboard",
@@ -48,7 +53,7 @@ calculation_page = st.Page(
 pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
-        "DATA TOOLS": [datacleaning_page, dashboard_page],
+        "DATA TOOLS": [datacleaning_page, datacleaningmulti_page, dashboard_page],
         "CALCULATION": [calculation_page],
     }
 )
