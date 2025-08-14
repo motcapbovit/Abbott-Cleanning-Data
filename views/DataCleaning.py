@@ -89,6 +89,8 @@ def clean_province(province):
         "dac lak": "dak lak",
         "lau dai dac lac": "dak lak",
         "tan an": "long an",
+        "hin tin": "binh dinh",
+        "phong thu hang hai": "hai phong"
     }
     outlier_provinces = ["ha tinh"]
 
@@ -110,14 +112,33 @@ def contains_special_chars(text, include_vietnamese=False):
 
 
 # Hàm translate các province không phải tiếng việt
-@st.cache_data
-def translate_text(text, target_lang="vi"):
-    translator = GoogleTranslator(target=target_lang)
-    # Tự động phát hiện và dịch
-    translated = translator.translate(text)
-    time.sleep(0.5)
+# @st.cache_data
+# def translate_text(text, target_lang="vi"):
+#     translator = GoogleTranslator(target=target_lang)
+#     # Tự động phát hiện và dịch
+#     translated = translator.translate(text)
+#     time.sleep(0.5)
 
-    return {"original": text, "translated": translated}
+#     return {"original": text, "translated": translated}
+
+@st.cache_data
+def translate_text(text, target_lang="vi", max_retries=10):
+    translator = GoogleTranslator(target=target_lang)
+    retries = 0
+
+    while retries < max_retries:
+        try:
+            # Tự động phát hiện và dịch
+            translated = translator.translate(text)
+            time.sleep(0.5)
+            return {"original": text, "translated": translated}
+
+        except Exception as e:
+            retries += 1
+            print(f"[Retry {retries}/{max_retries}] SSL Error: {e}")
+            time.sleep(2)  # nghỉ 2s rồi thử lại
+
+    raise RuntimeError(f"Failed to translate after {max_retries} retries due to SSL errors.")
 
 
 @st.cache_data
