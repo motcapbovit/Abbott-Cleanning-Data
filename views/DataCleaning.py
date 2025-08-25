@@ -475,8 +475,9 @@ list_component_bool_true = [
     "is_DATE",
     "is_CLP_REGION",
     "is_VOUCHER",
+    "is_CleanProvince"
 ]
-list_component_bool_false = ["is_CleanProvince"]
+list_component_bool_false = []
 
 list_component_list = ["periods"]
 
@@ -1068,7 +1069,7 @@ if st.session_state.upload_file_path:
     col14, col24 = st.columns(2)
 
     with col14:
-        exclude_outliers = ["Hot Deal", "Deal Hè", "Deal E2E"]
+        exclude_outliers = ["Hot Deal", "Deal Hè"]
 
         default_exclude_outliers = (
             exclude_outliers
@@ -1166,6 +1167,7 @@ if st.session_state.upload_file_path:
     df["KOL"] = df["Product Name"].apply(
         lambda x: extract_deal_info(x, exclude_outliers_list, kol_outliers_list)
     )
+    df["IS KOL"] = df["KOL"].apply(lambda x: False if x == "No KOLs" else True)
 
     # Store dataframe in session_state
     st.session_state.df = df
