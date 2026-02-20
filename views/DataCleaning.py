@@ -10,6 +10,7 @@ from calendar import monthrange
 from deep_translator import GoogleTranslator
 import time
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
@@ -27,24 +28,69 @@ def update_CleanProvince():
 
 
 @st.cache_data
-def remove_vietnamese_accent(text, special_char_map):
+# def remove_vietnamese_accent(text, special_char_map):
+#     """
+#     Loại bỏ dấu tiếng Việt và xử lý các ký tự đặc biệt
+
+#     Args:
+#         text (str): Văn bản cần xử lý
+#         special_char_map (dict, optional): Bảng chuyển đổi ký tự đặc biệt.
+#             Mặc định xử lý chữ 'đ'/'Đ'
+#     """
+
+#     # Loại bỏ dấu
+#     text = unicodedata.normalize("NFD", text)
+#     text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+
+#     # Thay thế các ký tự đặc biệt
+#     for char, replacement in special_char_map.items():
+#         text = text.replace(char, replacement)
+
+#     return text
+def is_latin(char):
     """
-    Loại bỏ dấu tiếng Việt và xử lý các ký tự đặc biệt
+    Kiểm tra ký tự có thuộc bảng chữ Latin không
+    """
+    try:
+        return "LATIN" in unicodedata.name(char)
+    except ValueError:
+        return False
 
-    Args:
-        text (str): Văn bản cần xử lý
-        special_char_map (dict, optional): Bảng chuyển đổi ký tự đặc biệt.
-            Mặc định xử lý chữ 'đ'/'Đ'
+
+@st.cache_data
+def remove_vietnamese_accent(text, special_char_map=None):
+    """
+    - Bỏ dấu tiếng Việt (Unicode Latin)
+    - Giữ nguyên chữ không phải Latin (Khmer, Thai, Chinese, ...)
+    - Xử lý ký tự đặc biệt theo map
     """
 
-    # Loại bỏ dấu
-    text = unicodedata.normalize("NFD", text)
-    text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+    result = []
 
-    # Thay thế các ký tự đặc biệt
-    for char, replacement in special_char_map.items():
-        text = text.replace(char, replacement)
+    print(text)
+    for char in text:
+        # Chuẩn hóa NFD để tách dấu
+        decomposed = unicodedata.normalize("NFD", char)
 
+        # Nếu ký tự gốc là Latin → bỏ dấu
+        if is_latin(decomposed[0]):
+            cleaned = "".join(
+                c for c in decomposed
+                if unicodedata.category(c) != "Mn"
+            )
+            result.append(cleaned)
+        else:
+            # Không phải Latin → giữ nguyên
+            result.append(char)
+
+    text = "".join(result)
+
+    # Thay thế ký tự đặc biệt (nếu có)
+    if special_char_map:
+        for char, replacement in special_char_map.items():
+            text = text.replace(char, replacement)
+
+    print(text)
     return text
 
 
@@ -90,7 +136,13 @@ def clean_province(province):
         "lau dai dac lac": "dak lak",
         "tan an": "long an",
         "hin tin": "binh dinh",
-        "phong thu hang hai": "hai phong"
+        "phong thu hang hai": "hai phong",
+        "hue": "thua thien hue",
+        "provinz quang tri": "quang tri",
+        "กรุงฮานอย": "ha noi",
+        "河内": "ha noi",
+        "海防": "hai phong",
+        "胡志明市": "ho chi minh",
     }
     outlier_provinces = ["ha tinh"]
 
@@ -113,48 +165,72 @@ def contains_special_chars(text, include_vietnamese=False):
 
 # Hàm translate các province không phải tiếng việt
 # @st.cache_data
-# def translate_text(text, target_lang="vi"):
+# def translate_text(text, target_lang="vi", max_retries=10):
 #     translator = GoogleTranslator(target=target_lang)
-#     # Tự động phát hiện và dịch
-#     translated = translator.translate(text)
-#     time.sleep(0.5)
+#     retries = 0
 
-#     return {"original": text, "translated": translated}
+#     while retries < max_retries:
+#         try:
+#             # Tự động phát hiện và dịch
+#             translated = translator.translate(text)
+#             # time.sleep(0.5)
+#             return {"original": text, "translated": translated}
+
+#         except Exception as e:
+#             retries += 1
+#             print(f"[Retry {retries}/{max_retries}] SSL Error: {e}")
+#             time.sleep(2)  # nghỉ 2s rồi thử lại
+
+#     raise RuntimeError(f"Failed to translate after {max_retries} retries due to SSL errors.")
+
 
 @st.cache_data
-def translate_text(text, target_lang="vi", max_retries=10):
+def process_province(text, target_lang="vi"):
     translator = GoogleTranslator(target=target_lang)
-    retries = 0
 
-    while retries < max_retries:
-        try:
-            # Tự động phát hiện và dịch
-            translated = translator.translate(text)
-            time.sleep(0.5)
-            return {"original": text, "translated": translated}
-
-        except Exception as e:
-            retries += 1
-            print(f"[Retry {retries}/{max_retries}] SSL Error: {e}")
-            time.sleep(2)  # nghỉ 2s rồi thử lại
-
-    raise RuntimeError(f"Failed to translate after {max_retries} retries due to SSL errors.")
-
-
-@st.cache_data
-def process_province(text):
     if contains_special_chars(text, include_vietnamese=False):
-        # Translate text with special characters
-        result = translate_text(text)
-        if isinstance(result, dict):
-            translated = result["translated"]
-            # Check if translated text still contains special characters
-            return (
-                "Others"
-                if contains_special_chars(translated, include_vietnamese=True)
-                else translated
-            )
+        try:
+            translated = translator.translate(text)
+            if contains_special_chars(translated, include_vietnamese=True):
+                return "Others"
+            return translated
+        except Exception:
+            return "Others"
     return text
+
+# @st.cache_data
+# def process_province(text):
+#     return (
+#         "Others"
+#         if contains_special_chars(text, include_vietnamese=True)
+#         else text
+#     )
+
+
+def normalize_province_pipeline(province):
+    province = clean_province(province)
+    province = process_province(province)
+    province = clean_province(province)
+    return province
+
+
+def build_province_map_parallel(provinces, max_workers=4):
+    result = {}
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(normalize_province_pipeline, p): p
+            for p in provinces
+        }
+
+        for future in as_completed(futures):
+            p = futures[future]
+            try:
+                result[p] = future.result()
+            except Exception:
+                result[p] = "Others"
+
+    return result
 
 
 ## SECTION 5 ##
@@ -162,6 +238,17 @@ def process_province(text):
 
 @st.cache_data
 def extract_size(product_name):
+    product_name_lower = product_name.lower()
+
+    # ====== SPECIAL LOGIC FOR ENSURE ======
+    if "ensure" in product_name_lower:
+        # Check 237ml
+        if re.search(r"\b237\s*ml\b", product_name_lower):
+            if "original" in product_name_lower:
+                return "Original 237ml"
+            else:
+                return "Gold 237ml"
+
     # Step 1: Replace special characters (except '.') with spaces
     cleaned_name = re.sub(r"[^\w\s\.]", " ", product_name)
 
@@ -176,8 +263,9 @@ def extract_size(product_name):
 
         # Check if the word contains both digits and either 'g', 'kg', or 'ml'
         if re.search(r"\d", word) and re.search(r"(g|kg|ml)", word, re.IGNORECASE):
-            return word.lower()  # Return the matched word as size info
-    return None  # Return None if no match is found
+            return word.lower()
+
+    return None
 
 
 ## SECTION 6 ##
@@ -212,6 +300,17 @@ def update_CLP_REGION():
 def update_VOUCHER():
     st.session_state.is_VOUCHER = not st.session_state.is_VOUCHER
 
+@st.cache_data
+def update_TIMELINE():
+    st.session_state.is_TIMELINE = not st.session_state.is_TIMELINE
+
+@st.cache_data
+def update_SCHEME():
+    st.session_state.is_SCHEME = not st.session_state.is_SCHEME
+
+@st.cache_data
+def update_CLEAN_1st_SKU():
+    st.session_state.is_CLEAN_1st_SKU = not st.session_state.is_CLEAN_1st_SKU
 
 @st.cache_data
 def determine_format_type(size):
@@ -258,6 +357,82 @@ def extract_clp_region(name):
             return value
 
     return name
+
+
+def extract_timeline(dt):
+    day = dt.day
+    mm = dt.strftime('%m')
+    eom = dt.days_in_month
+
+    if day <= 13:
+        return f'Double Day (01.{mm} - 13.{mm})'
+    elif day <= 20:
+        return f'Mid-Month (14.{mm} - 20.{mm})'
+    else:
+        return f'Pay Day (21.{mm} - {eom}.{mm})'
+    
+
+def extract_scheme(row):
+    try:
+        name = row["Product Name"]
+        brand = row["Brand"]
+
+        # Tìm vị trí COMBO
+        idx = name.upper().find("COMBO")
+        if idx == -1:
+            return 1
+
+        # Lấy phần sau COMBO (tương đương +6)
+        after_combo = name[idx + 6: idx + 11]  # 5 ký tự
+
+        # Lấy số combo (ký tự đầu)
+        qty = int(after_combo[0])
+
+        # Kiểm tra LỐC
+        if "LỐC" in after_combo.upper():
+            divisor = 5 if brand == "Glucerna" else 4 if brand == "Ensure" else 12
+            return qty / divisor
+        else:
+            return qty
+
+    except Exception:
+        return 1
+    
+
+def extract_clean_sku(row):
+    try:
+        brand = str(row["Brand"]).strip()
+        size = str(row["Size"]).strip()
+        name = str(row["Product Name"])
+
+        # ===== STEP 1: SKU nền (cột E trong Excel) =====
+        base_sku = f"{brand} {size}"
+
+        if base_sku == "Ensure 800g" and "ít ngọt" in name.lower():
+            base_sku = "Ensure Low Sugar Vanilla 800g"
+
+        # ===== STEP 2: Clean SKU =====
+        clean_sku = base_sku
+
+        if brand == "Grow" and "bột" in name.lower() and "Abbott Grow" in name:
+            idx = name.find("Abbott Grow") + 12
+            clean_sku = f"Grow {name[idx:].strip()}"
+
+        elif brand == "Similac" and "bột" in name.lower() and "Similac " in name:
+            idx = name.find("Similac ") + 8
+            clean_sku = f"Similac {name[idx:].strip()}"
+
+        # ===== STEP 3: Special case Glucerna 220ml =====
+        if clean_sku == "Glucerna 220ml":
+            if "(30 CHAI)" in name:
+                return "Glucerna 220ml 30 chai"
+            else:
+                return "Glucerna 220ml 24 chai"
+
+        return clean_sku
+
+    except Exception:
+        return None
 
 
 ## SECTION 7 ##
@@ -475,6 +650,9 @@ list_component_bool_true = [
     "is_DATE",
     "is_CLP_REGION",
     "is_VOUCHER",
+    "is_TIMELINE",
+    "is_SCHEME",
+    "is_CLEAN_1st_SKU",
     "is_CleanProvince"
 ]
 list_component_bool_false = []
@@ -545,60 +723,6 @@ st.header(
 )
 
 is_data = False
-
-# allowed_types = ["csv", "xlsx"]
-# upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
-
-# if upload_file is None and st.session_state.upload_file is None:
-#     st.info("Upload your data file to continue.")
-#     print("upload_file is None and st.session_state.upload_file is None")
-
-# elif upload_file is None and st.session_state.upload_file is not None:
-#     file_buffer = st.session_state.upload_file
-
-#     st.info("Processing File: " + st.session_state.upload_file_name)
-#     print("upload_file is None and st.session_state.upload_file is not None")
-#     is_data = True
-
-# elif upload_file is not None and st.session_state.upload_file is None:
-#     file_name = upload_file.name
-#     file_buffer = upload_file.read()
-
-#     st.session_state.upload_file_name = file_name
-#     st.session_state.upload_file = file_buffer
-
-#     st.info("Processing File: " + st.session_state.upload_file_name)
-#     print("upload_file is not None and st.session_state.upload_file is None")
-#     is_data = True
-
-# elif upload_file is not None and st.session_state.upload_file is not None:
-#     st.session_state.upload_file = None
-#     st.session_state.upload_file_name = None
-
-#     file_name = upload_file.name
-#     file_buffer = upload_file.read()
-
-#     st.session_state.upload_file_name = file_name
-#     st.session_state.upload_file = file_buffer
-
-#     st.info("Processing File: " + st.session_state.upload_file_name)
-#     print("upload_file is not None and st.session_state.upload_file is not None")
-#     is_data = True
-
-# if is_data:
-#     # Read the original data
-#     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
-
-#     if file_extension == "csv":
-#         df_original = pd.read_csv(io.BytesIO(file_buffer), low_memory=False)
-#     else:  # xlsx or xls
-#         df_original = pd.read_excel(io.BytesIO(file_buffer))
-
-#     headers_list = df_original.columns.tolist()
-
-#     add_vertical_space(1)
-#     with st.expander("**Dataframe Preview**"):
-#         st.dataframe(df_original)
 
 allowed_types = ["csv", "xlsx"]
 upload_file = st.file_uploader("CHOOSE YOUR DATA FILE (CSV FORMAT)", type=allowed_types)
@@ -705,11 +829,6 @@ if st.session_state.upload_file_path:
     # Fully read data
     file_extension = st.session_state.upload_file_name.split(".")[-1].lower()
 
-    # if file_extension == "csv":
-    #     df = pd.read_csv(io.BytesIO(file_buffer), low_memory=False, dtype=dtype_dict)
-    # else:  # xlsx or xls
-    #     df = pd.read_excel(io.BytesIO(file_buffer), dtype=dtype_dict)
-
     if file_extension == "csv":
         df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
     else:  # xlsx or xls
@@ -719,10 +838,7 @@ if st.session_state.upload_file_path:
     # Apply the cleaning transformation to each column in the list
     for col in columns_cast_numeric:
         if not is_numeric_dtype(df[col]):  # Check if the column is not already Int64
-            # Remove non-numeric characters and convert to Int64
-            # df[col] = pd.to_numeric(
-            #     df[col].astype(str).str.replace(r"\D", "", regex=True)
-            # ).astype("Int64")
+
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df[columns_cast_numeric] = df[columns_cast_numeric].fillna(0)
@@ -761,12 +877,16 @@ if st.session_state.upload_file_path:
 
     if CleanProvince:
         # Clean province
-        df["Clean Province"] = (
-            df["Province"]
-            .apply(clean_province)
-            .apply(process_province)
-            .apply(clean_province)
-        )
+        # df["Clean Province"] = (
+        #     df["Province"]
+        #     .apply(clean_province)
+        #     .apply(process_province)
+        #     .apply(clean_province)
+        # )
+
+        unique_provinces = df["Province"].dropna().unique()
+        province_map = build_province_map_parallel(unique_provinces)
+        df["Clean Province"] = df["Province"].map(province_map)
 
         with open("province_mapping.json", "r", encoding="utf-8") as f:
             province_mapping = json.load(f)
@@ -955,104 +1075,142 @@ if st.session_state.upload_file_path:
 
     st.divider()
 
-    # Divide the layout
-    col13, col23 = st.columns(2)
+    st.subheader("**Calculated Columns**")
 
-    with col13:
-        st.subheader("**Calculated Columns**")
+    FSP = st.checkbox(
+        "**ADD :red[FSP] COLUMN**",
+        value=st.session_state.is_FSP,
+        on_change=update_FSP,
+    )
 
-        FSP = st.checkbox(
-            "**ADD :red[FSP] COLUMN**",
-            value=st.session_state.is_FSP,
-            on_change=update_FSP,
-        )
-
-        if FSP:
-            # Calculate FSP
-            df["FSP"] = (
-                df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
-            ) / df["Quantity"]
-
-            # Store dataframe in session_state
-            st.session_state.df = df
-
-        FORMAT = st.checkbox(
-            "**ADD :red[FORMAT] COLUMN**",
-            value=st.session_state.is_FORMAT,
-            on_change=update_FORMAT,
-        )
-
-        if FORMAT:
-            df["Format"] = df["Size"].apply(determine_format_type)
-
-            # Store dataframe in session_state
-            st.session_state.df = df
-
-        SUBTOTAL_USD = st.checkbox(
-            "**ADD :red[SKU SUBTOTAL AFTER DISCOUNT (USD)] COLUMN**",
-            value=st.session_state.is_SUBTOTAL_USD,
-            on_change=update_SUBTOTAL_USD,
-        )
-
-        if SUBTOTAL_USD:
-            # Tính giá trị mới và lưu tạm vào một cột mới
-            df["SKU Subtotal After Discount (USD)"] = (
-                df["SKU Subtotal After Discount"] / 25800
-            ).round(2)
-
-            # Store dataframe in session_state
-            st.session_state.df = df
-
-        DATE = st.checkbox(
-            "**ADD :red[DATE TIME] COLUMNS**",
-            value=st.session_state.is_DATE,
-            on_change=update_DATE,
-        )
-
-        if DATE:
-            # Convert the 'Created Time' column to datetime format with the correct format
-            df["Created Time"] = pd.to_datetime(
-                df["Created Time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
-            )
-
-            # Convert Created Time to date only for comparison
-            df["Created Date"] = df["Created Time"].dt.date
-
-            # Thêm cột mới với định dạng YYYY/MM
-            df["Created Year Month"] = df["Created Time"].dt.strftime("%Y-%m")
-
-            # Store dataframe in session_state
-            st.session_state.df = df
-
-        CLP_REGION = st.checkbox(
-            "**ADD :red[CLP REGION] COLUMNS**",
-            value=st.session_state.is_CLP_REGION,
-            on_change=update_CLP_REGION,
-        )
-
-        if CLP_REGION:
-            df["Warehouse Region"] = df["Warehouse Name"].apply(extract_clp_region)
-
-            # Store dataframe in session_state
-            st.session_state.df = df
-
-        VOUCHER = st.checkbox(
-            "**ADD :red[VOUCHER] COLUMN**",
-            value=st.session_state.is_VOUCHER,
-            on_change=update_VOUCHER,
-        )
-
-        if VOUCHER:
-            # Calculate FSP
-            df["Voucher"] = df["SKU Platform Discount"] / (
-                df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
-            )
-
-            # Store dataframe in session_state
-            st.session_state.df = df
+    if FSP:
+        # Calculate FSP
+        df["FSP"] = (
+            df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
+        ) / df["Quantity"]
 
         # Store dataframe in session_state
         st.session_state.df = df
+
+    FORMAT = st.checkbox(
+        "**ADD :red[FORMAT] COLUMN**",
+        value=st.session_state.is_FORMAT,
+        on_change=update_FORMAT,
+    )
+
+    if FORMAT:
+        df["Format"] = df["Size"].apply(determine_format_type)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    SUBTOTAL_USD = st.checkbox(
+        "**ADD :red[SKU SUBTOTAL AFTER DISCOUNT (USD)] COLUMN**",
+        value=st.session_state.is_SUBTOTAL_USD,
+        on_change=update_SUBTOTAL_USD,
+    )
+
+    if SUBTOTAL_USD:
+        # Tính giá trị mới và lưu tạm vào một cột mới
+        df["SKU Subtotal After Discount (USD)"] = (
+            df["SKU Subtotal After Discount"] / 26600
+        ).round(2)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    DATE = st.checkbox(
+        "**ADD :red[DATE TIME] COLUMNS**",
+        value=st.session_state.is_DATE,
+        on_change=update_DATE,
+    )
+
+    if DATE:
+        # Convert the 'Created Time' column to datetime format with the correct format
+        df["Created Time"] = pd.to_datetime(
+            df["Created Time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
+        )
+
+        # Convert Created Time to date only for comparison
+        df["Created Date"] = df["Created Time"].dt.date
+
+        # Thêm cột mới với định dạng YYYY/MM
+        df["Created Year Month"] = df["Created Time"].dt.strftime("%Y-%m")
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    CLP_REGION = st.checkbox(
+        "**ADD :red[CLP REGION] COLUMNS**",
+        value=st.session_state.is_CLP_REGION,
+        on_change=update_CLP_REGION,
+    )
+
+    if CLP_REGION:
+        df["Warehouse Region"] = df["Warehouse Name"].apply(extract_clp_region)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    VOUCHER = st.checkbox(
+        "**ADD :red[VOUCHER] COLUMN**",
+        value=st.session_state.is_VOUCHER,
+        on_change=update_VOUCHER,
+    )
+
+    if VOUCHER:
+        # Calculate FSP
+        df["Voucher"] = df["SKU Platform Discount"] / (
+            df["SKU Subtotal Before Discount"] - df["SKU Seller Discount"]
+        )
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    TIMELINE = st.checkbox(
+        "**ADD :red[TIMELINE] COLUMN**",
+        value=st.session_state.is_TIMELINE,
+        on_change=update_TIMELINE,
+    )
+
+    if TIMELINE:
+        # Calculate FSP
+        df["Created Time"] = pd.to_datetime(
+            df["Created Time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
+        )
+
+        df["Timeline"] = df["Created Time"].apply(extract_timeline)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    SCHEME = st.checkbox(
+        "**ADD :red[SCHEME] COLUMN**",
+        value=st.session_state.is_SCHEME,
+        on_change=update_SCHEME,
+    )
+
+    if SCHEME:
+        df["Scheme"] = df.apply(extract_scheme, axis=1)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+    CLEAN_1st_SKU = st.checkbox(
+        "**ADD :red[CLEAN 1ST SKU] COLUMN**",
+        value=st.session_state.is_CLEAN_1st_SKU,
+        on_change=update_CLEAN_1st_SKU,
+    )
+
+    if CLEAN_1st_SKU:
+        df["Clean 1st SKU"] = df.apply(extract_clean_sku, axis=1)
+
+        # Store dataframe in session_state
+        st.session_state.df = df
+
+
+    # Store dataframe in session_state
+    st.session_state.df = df
 
     add_vertical_space(1)
     with st.expander("**Dataframe Preview**"):

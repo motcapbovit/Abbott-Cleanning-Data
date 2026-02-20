@@ -32,29 +32,29 @@ datacleaning_page = st.Page(
     title="Data Cleaning",
     icon=":material/account_tree:",
 )
-datacleaningmulti_page = st.Page(
-    "views/DataCleaningMulltichunks.py",
-    title="Data Cleaning Multichunks",
-    icon=":material/account_tree:",
-)
+# datacleaningmulti_page = st.Page(
+#     "views/DataCleaningMulltichunks.py",
+#     title="Data Cleaning Multichunks",
+#     icon=":material/account_tree:",
+# )
 dashboard_page = st.Page(
     "views/Dashboard.py",
     title="Dashboard",
     icon=":material/smart_toy:",
 )
-calculation_page = st.Page(
-    "views/SmartCalculation.py",
-    title="Smart Calculator",
-    icon=":material/smart_toy:",
-)
+# calculation_page = st.Page(
+#     "views/SmartCalculation.py",
+#     title="Smart Calculator",
+#     icon=":material/smart_toy:",
+# )
 
 
 # --- NAVIGATION SETUP ---
 pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
-        "DATA TOOLS": [datacleaning_page, datacleaningmulti_page, dashboard_page],
-        "CALCULATION": [calculation_page],
+        "DATA TOOLS": [datacleaning_page, dashboard_page],
+        # "CALCULATION": [calculation_page],
     }
 )
 
@@ -86,7 +86,7 @@ with st.sidebar:
     st.write(f"**Last Updated:** {timestamp}")
 
     # List chứa các update mới
-    updates = ["Chỉnh logic chia period", "Chỉnh tỉ giá 25800"]
+    updates = ["Chỉnh tỉ giá 26600", "Chỉnh logic tính cột Product Size", "Bổ sung phần tính toán cột Cleaned SKU"]
     display_version_info(updates=updates)
 
     add_vertical_space(1)
