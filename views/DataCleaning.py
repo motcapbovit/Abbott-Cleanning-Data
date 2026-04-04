@@ -74,10 +74,7 @@ def remove_vietnamese_accent(text, special_char_map=None):
 
         # Nếu ký tự gốc là Latin → bỏ dấu
         if is_latin(decomposed[0]):
-            cleaned = "".join(
-                c for c in decomposed
-                if unicodedata.category(c) != "Mn"
-            )
+            cleaned = "".join(c for c in decomposed if unicodedata.category(c) != "Mn")
             result.append(cleaned)
         else:
             # Không phải Latin → giữ nguyên
@@ -219,8 +216,7 @@ def build_province_map_parallel(provinces, max_workers=4):
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
-            executor.submit(normalize_province_pipeline, p): p
-            for p in provinces
+            executor.submit(normalize_province_pipeline, p): p for p in provinces
         }
 
         for future in as_completed(futures):
@@ -263,7 +259,9 @@ def extract_size(product_name):
 
         # Check if the word contains both digits and either 'g', 'kg', or 'ml'
         if re.search(r"\d", word) and re.search(r"(g|kg|ml)", word, re.IGNORECASE):
-            return word.lower()
+            # Chỉ thay gr → g trong word này (nếu còn sót)
+            cleaned_word = re.sub(r"gr\b", "g", word, flags=re.IGNORECASE)
+            return cleaned_word.lower()
 
     return None
 
@@ -300,13 +298,16 @@ def update_CLP_REGION():
 def update_VOUCHER():
     st.session_state.is_VOUCHER = not st.session_state.is_VOUCHER
 
+
 @st.cache_data
 def update_TIMELINE():
     st.session_state.is_TIMELINE = not st.session_state.is_TIMELINE
 
+
 @st.cache_data
 def update_SCHEME():
     st.session_state.is_SCHEME = not st.session_state.is_SCHEME
+
 
 @st.cache_data
 def update_CLEAN_1st_SKU():
@@ -325,19 +326,20 @@ def determine_format_type(size):
 def extract_clp_region(name):
     # Dictionary cho phần trong ngoặc
     exception_in_brackets = {
-        "q6": "HCM",
-        "củ chi": "HCM",
-        "hcm": "HCM",
+        "q6": "Hồ Chí Minh",
+        "củ chi": "Hồ Chí Minh",
+        "hcm": "Hồ Chí Minh",
         "tuy hòa": "Phú Yên",
         "tuy hoà": "Phú Yên",
+        "hn": "Hà Nội",
     }
 
     # Dictionary cho phần ngoài ngoặc
     exception_outside = {
         "hn": "Hà Nội",
         "đn": "Đà Nẵng",
-        "hcm": "HCM",
-        "bách hóa sữa bột 2": "HCM",
+        "hcm": "Hồ Chí Minh",
+        "bách hóa sữa bột 2": "Hồ Chí Minh",
     }
 
     # Kiểm tra phần trong ngoặc
@@ -361,16 +363,16 @@ def extract_clp_region(name):
 
 def extract_timeline(dt):
     day = dt.day
-    mm = dt.strftime('%m')
+    mm = dt.strftime("%m")
     eom = dt.days_in_month
 
     if day <= 13:
-        return f'Double Day (01.{mm} - 13.{mm})'
+        return f"Double Day (01.{mm} - 13.{mm})"
     elif day <= 20:
-        return f'Mid-Month (14.{mm} - 20.{mm})'
+        return f"Mid-Month (14.{mm} - 20.{mm})"
     else:
-        return f'Pay Day (21.{mm} - {eom}.{mm})'
-    
+        return f"Pay Day (21.{mm} - {eom}.{mm})"
+
 
 def extract_scheme(row):
     try:
@@ -383,7 +385,7 @@ def extract_scheme(row):
             return 1
 
         # Lấy phần sau COMBO (tương đương +6)
-        after_combo = name[idx + 6: idx + 11]  # 5 ký tự
+        after_combo = name[idx + 6 : idx + 11]  # 5 ký tự
 
         # Lấy số combo (ký tự đầu)
         qty = int(after_combo[0])
@@ -397,7 +399,7 @@ def extract_scheme(row):
 
     except Exception:
         return 1
-    
+
 
 def extract_clean_sku(row):
     try:
