@@ -11,7 +11,6 @@ from deep_translator import GoogleTranslator
 import time
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import gspread
 import pandas as pd
 from google.oauth2.service_account import Credentials
 
@@ -507,57 +506,6 @@ def extract_clean_sku(row):
 
     except Exception:
         return None
-
-
-def get_latest_sku_mapping():
-    SERVICE_ACCOUNT = "service_account.json"
-    SHEET_ID = "1cZIZQIBOvvkNGrBlW-h2HpWTkYChH5FRzKI13MwNrXM"
-    WORKSHEET_NAME = "Summary"
-
-    scopes = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive",
-    ]
-
-    creds = Credentials.from_service_account_file(SERVICE_ACCOUNT, scopes=scopes)
-
-    client = gspread.authorize(creds)
-
-    spreadsheet = client.open_by_key(SHEET_ID)
-    worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
-
-    data = worksheet.get_all_records()
-    df = pd.DataFrame(data)
-
-    df.to_excel("sku_mapping.xlsx", index=False)
-
-
-def apply_sku_mapping(df, df_sku_mapping):
-    # Chuẩn hoá text để tránh mismatch
-    df["Clean 1st SKU_norm"] = df["Clean 1st SKU"].astype(str).str.strip().str.upper()
-
-    df_sku_mapping["SKU_norm"] = (
-        df_sku_mapping["SKU"].astype(str).str.strip().str.upper()
-    )
-
-    # Tạo dict mapping
-    sku_map = (
-        df_sku_mapping.drop_duplicates("SKU_norm")
-        .set_index("SKU_norm")["Cleaned SKU"]
-        .to_dict()
-    )
-
-    # Mapping
-    df["Clean 2nd SKU"] = df["Clean 1st SKU_norm"].map(sku_map)
-
-    # (Optional) fallback: nếu không map được thì giữ Clean 1st SKU
-    df["Clean 2nd SKU"] = df["Clean 2nd SKU"].fillna(df["Clean 1st SKU"])
-
-    # Cleanup cột phụ
-    df.drop(columns=["Clean 1st SKU_norm"], inplace=True)
-
-    return df
-
 
 ## SECTION 7 ##
 
