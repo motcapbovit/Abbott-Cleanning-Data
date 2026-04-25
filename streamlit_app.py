@@ -47,13 +47,18 @@ dashboard_page = st.Page(
 #     title="Smart Calculator",
 #     icon=":material/smart_toy:",
 # )
+datacleaningmulti_page = st.Page(
+    "views/DataCleaningMulti.py",
+    title="Data Cleaning Multi-files",
+    icon=":material/account_tree:",
+)
 
 
 # --- NAVIGATION SETUP ---
 pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
-        "DATA TOOLS": [datacleaning_page, dashboard_page],
+        "DATA TOOLS": [datacleaning_page, datacleaningmulti_page, dashboard_page],
         # "CALCULATION": [calculation_page],
     }
 )
@@ -86,7 +91,7 @@ with st.sidebar:
     st.write(f"**Last Updated:** {timestamp}")
 
     # List chứa các update mới
-    updates = ["Chỉnh tỉ giá 26600", "Chỉnh logic tính cột Product Size", "Bổ sung phần tính toán cột Cleaned SKU"]
+    updates = ["Bổ sung trang process multiple files", "Bỏ phần config cho Period"]
     display_version_info(updates=updates)
 
     add_vertical_space(1)
