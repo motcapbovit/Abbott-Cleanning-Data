@@ -12,7 +12,6 @@ import time
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
-from google.oauth2.service_account import Credentials
 
 # Extra utilities
 from streamlit_extras.add_vertical_space import add_vertical_space
