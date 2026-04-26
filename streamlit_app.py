@@ -66,7 +66,7 @@ pg = st.navigation(
 
 # --- LOGO SETUP ---
 st.logo(
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Abbott_Laboratories_logo.svg/950px-Abbott_Laboratories_logo.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/a/a4/Abbott_Laboratories_logo.svg",
     size="large",
 )
 
