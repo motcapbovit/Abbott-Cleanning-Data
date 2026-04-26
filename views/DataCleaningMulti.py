@@ -858,6 +858,15 @@ upload_files = st.file_uploader(
 if "files_data" not in st.session_state:
     st.session_state.files_data = {}
 
+if "last_uploaded_files" not in st.session_state:
+    st.session_state.last_uploaded_files = []
+
+current_file_names = [f.name for f in upload_files] if upload_files else []
+
+if current_file_names != st.session_state.last_uploaded_files:
+    st.session_state.files_data = {}
+    st.session_state.last_uploaded_files = current_file_names
+
 if upload_files:
     for upload_file in upload_files:
         file_name = upload_file.name
@@ -899,7 +908,7 @@ if upload_files:
             "headers_list": df_original.columns.tolist()
         }
 
-        st.info(f"Processed File: {file_name}")
+        st.info(f"Processing File: {file_name}")
 
 # # ✅ Preview tất cả file
 # if st.session_state.files_data:
