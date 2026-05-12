@@ -52,6 +52,11 @@ datacleaningmulti_page = st.Page(
     title="Data Cleaning Multi-files",
     icon=":material/account_tree:",
 )
+mergefile_page = st.Page(
+    "views/MergeFiles.py",
+    title="File Combination",
+    icon=":material/account_tree:",
+)
 
 
 # --- NAVIGATION SETUP ---
@@ -59,6 +64,7 @@ pg = st.navigation(
     {
         "DOCUMENTATION": [documentation_page],
         "DATA TOOLS": [datacleaning_page, datacleaningmulti_page, dashboard_page],
+        "FILE TOOLS": [mergefile_page]
         # "CALCULATION": [calculation_page],
     }
 )

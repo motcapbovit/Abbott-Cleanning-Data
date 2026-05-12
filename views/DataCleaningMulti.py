@@ -629,8 +629,6 @@ def get_default_periods(min_date, max_date):
 
 
 ## SECTION 10 ##
-
-
 @st.cache_data
 def convert_df_to_csv(df):
     """Convert dataframe to CSV format"""
@@ -648,11 +646,13 @@ def convert_df_to_excel(df):
         workbook = writer.book
         worksheet = writer.sheets["Sheet1"]
 
-        # Create center alignment format
-        center_format = workbook.add_format({"align": "center"})
+        # worksheet.autofit()
 
-        # Find Brand column index
-        brand_col_idx = list(df.columns).index("Brand")
+        # Create center alignment format
+        # center_format = workbook.add_format({"align": "center"})
+
+        # # Find Brand column index
+        # brand_col_idx = list(df.columns).index("Brand")
 
         # Auto-adjust columns' width
         for i, col in enumerate(df.columns):
@@ -660,10 +660,19 @@ def convert_df_to_excel(df):
             column_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
 
             # Apply center format to Brand column, normal width adjustment for others
-            if i == brand_col_idx:
-                worksheet.set_column(i, i, column_len, center_format)
-            else:
-                worksheet.set_column(i, i, column_len)
+            worksheet.set_column(i, i, column_len)
+            # if i == brand_col_idx:
+            #     worksheet.set_column(i, i, column_len, center_format)
+            # else:
+            #     worksheet.set_column(i, i, column_len)
+
+        (max_row, max_col) = df.shape
+        column_settings = [{"header": column} for column in df.columns]
+        
+        worksheet.add_table(0, 0, max_row, max_col - 1, {
+            "columns": column_settings,
+            "style": "Table Style Light 13"  # Standard Excel style name
+        })
 
     # Reset pointer to the start of BytesIO object
     output.seek(0)
@@ -946,6 +955,7 @@ if upload_files:
             "SKU ID",
             "Product Name",
             "Package ID",
+            "Tracking ID"
         ]
 
         default_string_columns = (
@@ -2067,7 +2077,7 @@ if upload_files:
 
     timestamp = get_timestamp_string(date_only=True)
 
-    tab1, tab2 = st.tabs(["📦 Individual Download", "📦 Download All"])
+    tab1, tab2, tab3 = st.tabs(["📦 Individual Download", "📦 Download All", "📦 Download Merged File"])
 
     with tab1:
         # Header
@@ -2145,3 +2155,96 @@ if upload_files:
                 )
         else:
             st.info("Chưa có file nào")
+
+    with tab3:
+        if st.session_state.files_data:
+            processed_dfs = [
+                data["df_processed"] for data in st.session_state.files_data.values()
+            ]
+        
+        df_concat = pd.DataFrame()
+
+        if len(processed_dfs) > 1:
+            try:
+                # Vertical Relaxed: Cho phép các cột khác nhau (missing columns sẽ thành null)
+                df_concat = pd.concat(processed_dfs, ignore_index=True)
+                
+                st.success(f"✅ Successfully combined **{len(processed_dfs)} files** - Total rows: **{len(df_concat):,}**")
+
+                # Hiển thị thông tin
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Total rows", f"{len(df_concat):,}")
+                with col2:
+                    st.metric("Total columns", len(df_concat.columns))
+                with col3:
+                    st.metric("Total files", len(processed_dfs))
+
+                with st.expander("🔎 Data Preview", expanded=False):
+                    st.dataframe(df_concat, use_container_width=True)
+
+                st.session_state.df_concat = df_concat
+
+            except Exception as e:
+                st.error(f"Lỗi khi concat: {e}")
+                st.session_state.df_concat = None
+
+        elif len(processed_dfs) == 1:
+            df_concat = processed_dfs[0]
+            
+            st.success("✅ Only 1 upload file detected")
+
+            # Hiển thị thông tin
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total rows", f"{len(df_concat):,}")
+            with col2:
+                st.metric("Total columns", len(df_concat.columns))
+            with col3:
+                st.metric("Total files", len(processed_dfs))
+
+            with st.expander("🔎 Data Preview", expanded=False):
+                st.dataframe(df_concat, use_container_width=True)
+
+            st.session_state.df_concat = df_concat
+
+        else:
+            st.session_state.df_concat = None
+
+        col1, col2, col3, col4, col5 = st.columns([3, 1, 2, 2, 1])
+        col1.markdown("**Custom Name**")
+        col3.markdown("**CSV**")
+        col4.markdown("**XLSX**")
+
+        timestamp = get_timestamp_string(date_only=True)
+
+        default_name = f"combined_order_{timestamp}"
+
+        # Cột 1: input tên file
+        with col1:
+            custom_name = st.text_input(
+                label="",
+                value=default_name,
+                key=f"name_concat",
+                label_visibility="collapsed"
+            )
+
+        # Cột 2: Download CSV
+        with col3:
+            st.download_button(
+                label="📥 Download CSV",
+                data=convert_df_to_csv(df),
+                file_name=f"{custom_name}.csv",
+                mime="text/csv",
+                key=f"csv_concat"
+            )
+
+        # Cột 3: Download XLSX
+        with col4:
+            st.download_button(
+                label="📥 Download XLSX",
+                data=convert_df_to_excel(df),
+                file_name=f"{custom_name}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"xlsx_concat"
+            )
